@@ -1,47 +1,66 @@
 import { Component, OnInit,ViewChild,ElementRef   } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { WiseconnService } from 'app/services/wiseconn.service';
 import { element } from 'protractor';
 import { NgbModal,ModalDismissReasons } from '@ng-bootstrap/ng-bootstrap';
 import { WeatherService } from 'app/services/weather.service';
 
 @Component({
-  selector: 'app-farm-map',
-  templateUrl: './farm-map.component.html',
-  styleUrls: ['./farm-map.component.scss'],
+  selector: 'app-farm-map-polygon',
+  templateUrl: './farm-map-polygon.component.html',
+  styleUrls: ['./farm-map-polygon.component.scss'],
 })
-export class FarmMapComponent implements OnInit {
+export class FarmMapPolygonComponent implements OnInit {
   @ViewChild('mapRef', {static: true }) mapElement: ElementRef;
   private google_api_key = 'AIzaSyDx_dMfo0VnR_2CsF_wNw9Ayjd_HO6sMB0';
   public loading = false;
   public id = 0;
   public url;
   public mediciones;
+  public clima;
+  public climaRes: any = [];
   closeResult: string;
-  clima: any;
+  status: any;
+  idfarm: any;
   
-  constructor(private _route: ActivatedRoute,private wiseconnService: WiseconnService, public modalService: NgbModal,private router: Router, public weatherService: WeatherService) { }
+  constructor(private _route: ActivatedRoute,private wiseconnService: WiseconnService, public modalService: NgbModal, public weatherService: WeatherService) { }
   ngOnInit() {
     //this.renderMap();
     this.loading = true;
     this.wiseconnService.getZones(this._route.snapshot.paramMap.get('id')).subscribe((data: {}) => {      
       this.loading = false; 
-      this.loadMap(data); 
+      console.log(this._route.snapshot.paramMap.get('farm'))
+      this.wiseconnService.getMeterogoAgrifut(this._route.snapshot.paramMap.get('farm')).subscribe((data: {}) => { 
+        this.loading = false;
+            console.log(data);
+         this.mediciones=data;   
+       });
+      this.wiseconnService.getIrrigarionsRealOfZones(this._route.snapshot.paramMap.get('farm')).subscribe((dataIrrigations: {}) => {
+     //   console.log(dataIrrigations)
+        this.idfarm = data[0].zoneId;
+        this.status = dataIrrigations[0].status;
+        this.idfarm = data[0].name;
+        this.idfarm = data[0].unit;
+        this.idfarm = data[0].lastData;
+        this.idfarm = data[0].lastDataDate;
+        this.idfarm = data[0].monitoringTime;
+        this.idfarm = data[0].sensorDepth;
+        this.idfarm = data[0].depthUnit;
+
+      //     alert('ID Sector: '+id+'\nfarmId: '+data[0].farmId+ '\nESTATUS: '+dataIrrigations[0].status+
+      //   '\nZone ID: '+data[0].zoneId+
+      //   '\nName: '+data[0].name+' \nUnit: '+data[0].unit+ '\nLast Data: '+data[0].lastData+
+      //   '\nLast Data Date: '+data[0].lastDataDate+'\nMonitoring Time: '+data[0].monitoringTime+
+      //   '\nSenson Depth: '+data[0].sensorDepth+'\nDepth Unit: '+data[0].depthUnit+
+      //   '\nNode ID: '+data[0].nodeId//'\nExpansion Port: '+data[0].physicalConnection.expansionPort+
+      // // // '\nExpansionBoard: '+data[0].physicalConnection.expansionBoard+
+      // //  //'\nNode Port: '+data[0].physicalConnection.nodePort+'\nSensor Type: '+data[0].sensorType
+      //   );
+   })
+      this.loadMap2(data); 
     });
     let idFarm = (this._route.snapshot.paramMap.get('id'));
-    this.wiseconnService.getFarm(idFarm).subscribe((data) => {
-      console.log(data);
-      this.weatherService;
-      const q = [data.latitude, data.longitude];
-      const key = "67a49d3ba5904bef87441658192312";
-      console.log(q);
-      this.weatherService.getWeather(key,q).subscribe((weather) => {
-        this.clima = (weather.data.weather);
-        // var clima2 = weather.data.current_condition[0];
-        // this.climaRes.push({ name: 'temp_C' , value: clima2.temp_C });
-        // this.climaRes.push({ name: 'temp_F' , value: clima2.temp_F });
-        console.log(weather.data.weather);
-      });
+    this.wiseconnService.getFarm(idFarm).subscribe((data: {}) => {
         console.log(data['account']['id']);
         switch (data['account']['id']) { 
           case 63:
@@ -55,7 +74,47 @@ export class FarmMapComponent implements OnInit {
         } console.log(this.url);
     });
   }
+  loadMap2(data){
+    this.weatherService;
+    let idFarm = this._route.snapshot.paramMap.get('farm');
+    let farmPolygon = data.find(function(element){
+      return element['id'] == idFarm;
+    }); 
+    const q = [farmPolygon.latitude, farmPolygon.longitude];
+    const key = "67a49d3ba5904bef87441658192312";
+    console.log(q);
+    this.weatherService.getWeather(key,q).subscribe((weather) => {
+      this.clima = (weather.data.weather);
+      // var clima2 = weather.data.current_condition[0];
+      // this.climaRes.push({ name: 'temp_C' , value: clima2.temp_C });
+      // this.climaRes.push({ name: 'temp_F' , value: clima2.temp_F });
+      console.log(weather.data.weather);
+    });
+     console.log( farmPolygon.polygon.path)
 
+    if(farmPolygon.latitude == undefined && farmPolygon.latitude == undefined){
+      var map = new window['google'].maps.Map(this.mapElement.nativeElement, {
+        center: {lat:  farmPolygon.polygon.path[0].lat, lng: farmPolygon.polygon.path[0].lng},
+        zoom:15,
+        mapTypeId: window['google'].maps.MapTypeId.HYBRID
+      });
+    }else{
+      var map = new window['google'].maps.Map(this.mapElement.nativeElement, {
+        center: {lat: farmPolygon.latitude, lng: farmPolygon.longitude},
+        zoom:15,
+        mapTypeId: window['google'].maps.MapTypeId.HYBRID
+      });
+    } 
+    var flightPath = new window['google'].maps.Polygon({
+      paths: farmPolygon.polygon.path,
+      strokeColor: '#49AA4F',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: '#49AA4F',
+      fillOpacity: 0.35,
+    });
+    flightPath.setMap(map);
+  }
   renderMap() {
     
     window['initMap'] = () => {
@@ -70,24 +129,19 @@ export class FarmMapComponent implements OnInit {
     if(data.length == 0){
       var map = new window['google'].maps.Map(this.mapElement.nativeElement, {
         center: {lat: -32.89963602180464, lng: -70.90243510967417},
-        zoom:15,
-        mapTypeId: window['google'].maps.MapTypeId.HYBRID
+        zoom:15
       });
     }else{
       var map = new window['google'].maps.Map(this.mapElement.nativeElement, {
         center: {lat: data[10].polygon.path[0].lat, lng: data[10].polygon.path[0].lng},
-        zoom:15,
-        mapTypeId: window['google'].maps.MapTypeId.HYBRID
+        zoom:15
       });
     }
     
     //Funcion de Click
     var wisservice = this.wiseconnService;
-    var redirect =  this.router;
-
     var addListenersOnPolygon = function(polygon,id) {
       //this.loading = true;
-
       window['google'].maps.event.addListener(polygon, 'click', () => {
      //   var ids = 0;
 
@@ -95,19 +149,23 @@ export class FarmMapComponent implements OnInit {
     //   this.obtenerMedidas(id);
        wisservice.getMeasuresOfZones(id).subscribe((data: {}) => {     
        wisservice.getIrrigarionsRealOfZones(id).subscribe((dataIrrigations: {}) => {
-          redirect.navigate(['/farmpolygon', data[0].farmId, id]);
-
-        //     alert('ID Sector: '+id+'\nfarmId: '+data[0].farmId+ '\nESTATUS: '+dataIrrigations[0].status+
-        //   '\nZone ID: '+data[0].zoneId+
-        //   '\nName: '+data[0].name+' \nUnit: '+data[0].unit+ '\nLast Data: '+data[0].lastData+
-        //   '\nLast Data Date: '+data[0].lastDataDate+'\nMonitoring Time: '+data[0].monitoringTime+
-        //   '\nSenson Depth: '+data[0].sensorDepth+'\nDepth Unit: '+data[0].depthUnit+
-        //   '\nNode ID: '+data[0].nodeId//'\nExpansion Port: '+data[0].physicalConnection.expansionPort+
-        // // // '\nExpansionBoard: '+data[0].physicalConnection.expansionBoard+
-        // //  //'\nNode Port: '+data[0].physicalConnection.nodePort+'\nSensor Type: '+data[0].sensorType
-        //   );
+       
+          alert('ID Sector: '+id+'\nfarmId: '+data[0].farmId+ '\nESTATUS: '+dataIrrigations[0].status+
+        '\nZone ID: '+data[0].zoneId+
+        '\nName: '+data[0].name+' \nUnit: '+data[0].unit+ '\nLast Data: '+data[0].lastData+
+        '\nLast Data Date: '+data[0].lastDataDate+'\nMonitoring Time: '+data[0].monitoringTime+
+        '\nSenson Depth: '+data[0].sensorDepth+'\nDepth Unit: '+data[0].depthUnit+
+        '\nNode ID: '+data[0].nodeId//'\nExpansion Port: '+data[0].physicalConnection.expansionPort+
+       // '\nExpansionBoard: '+data[0].physicalConnection.expansionBoard+
+        //'\nNode Port: '+data[0].physicalConnection.nodePort+'\nSensor Type: '+data[0].sensorType
+        );
+        
+        
      })
+
         });
+       
+       
       });  
     }
  
@@ -149,8 +207,9 @@ export class FarmMapComponent implements OnInit {
       // });
     data.forEach(element => {
       // Construct the polygon.
-      wisservice.getIrrigarionsRealOfZones(element.id).subscribe((dataIrrigations: {}) => {
-        if(element.id == "727" || element.id== 727 || element.id == "6054" || element.id == 6054 || element.id == "13872" || element.id == 13872){
+      let idFarm = this._route.snapshot.paramMap.get('id');
+      wisservice.getIrrigarionsRealOfZones(idFarm).subscribe((dataIrrigations: {}) => {
+        if(idFarm == "727" || element.id== 727 || element.id == "6054" || element.id == 6054 || element.id == "13872" || element.id == 13872){
           var Triangle = new window['google'].maps.Polygon({
             paths: element.polygon.path,
             strokeColor: '#E5C720',

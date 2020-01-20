@@ -26,6 +26,8 @@ import {
 import { ClientComponent } from 'app/client/client.component';
 import { FarmClientComponent } from 'app/farm-client/farm-client.component';
 import { SafePipePipe } from 'app/pipe/safe-pipe.pipe';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { FarmMapPolygonComponent } from 'app/farm-map-polygon/farm-map-polygon.component';
 @NgModule({
   imports: [
     CommonModule,
@@ -38,6 +40,7 @@ import { SafePipePipe } from 'app/pipe/safe-pipe.pipe';
     MatInputModule,
     MatSelectModule,
     MatTooltipModule,
+    NgbModule,
     NgxLoadingModule.forRoot({})
   ],
   declarations: [
@@ -53,7 +56,8 @@ import { SafePipePipe } from 'app/pipe/safe-pipe.pipe';
     FarmMapComponent,
     ClientComponent,
     FarmClientComponent,
-    SafePipePipe
+    SafePipePipe,
+    FarmMapPolygonComponent
   ]
 })
 
