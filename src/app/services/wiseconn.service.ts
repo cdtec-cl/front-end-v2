@@ -42,6 +42,7 @@ export class WiseconnService {
     )
   }
   getIrrigarionsRealOfZones(id): Observable<farmModels> { 
+  //JLA: Sigo viendo condigo fuente quemado, favor corregir
     return this.http.get<farmModels>(this.baseurl + '/zones/'+id+"/realIrrigations?initTime=2019-12-01&endTime=2019-12-29", this.httpOptions)
     .pipe(
       retry(1),
