@@ -42,7 +42,9 @@ export class FarmMapComponent implements OnInit {
         // this.climaRes.push({ name: 'temp_F' , value: clima2.temp_F });
         console.log(weather.data.weather);
       });
-        console.log(data['account']['id']);
+      
+      //JLA: Esta funcion switch debe tomar los datos de configuraciones de IRRIMAXLIVE de forma dinñámica con rutas de cada cliente desde base de datos 
+      console.log(data['account']['id']);
         switch (data['account']['id']) { 
           case 63:
             this.url="https://cdtec.irrimaxlive.com/?cmd=signin&username=cdtec&password=l01yliEl7H#/u:3435/Campos/Agrifrut";
@@ -150,6 +152,7 @@ export class FarmMapComponent implements OnInit {
     data.forEach(element => {
       // Construct the polygon.
       wisservice.getIrrigarionsRealOfZones(element.id).subscribe((dataIrrigations: {}) => {
+        //JLA: Por qué las condiciones tienen los IDs fijos, esto debe ser dinámico para cuando se tengan todos los clientes
         if(element.id == "727" || element.id== 727 || element.id == "6054" || element.id == 6054 || element.id == "13872" || element.id == 13872){
           var Triangle = new window['google'].maps.Polygon({
             paths: element.polygon.path,
