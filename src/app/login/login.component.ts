@@ -60,8 +60,7 @@ export class LoginComponent implements OnInit,OnDestroy,AfterViewInit {
 		const target = event.target;
 		const usuario= target.querySelector('#usuario').value;
 		const password= target.querySelector('#password').value;
-	 
-		//JLA: OJO esto debe validarse desde la base de datos y no estar quemado en el código
+	  
 		if (usuario == 'Admin' && password == '12345678') {
 			console.log('entre');
 			this._router.navigate(['/dashboard']);

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
 declare const $: any;
 declare interface RouteInfo {
@@ -6,10 +7,15 @@ declare interface RouteInfo {
     title: string;
     icon: string;
     class: string;
+    active: boolean
 }
 export const ROUTES: RouteInfo[] = [
-    { path: '/dashboard', title: 'Dashboard',  icon: 'dashboard', class: '' },
-    { path: '/farms', title: 'Campos',  icon:'person', class: '' }
+    { path: '/dashboard', title: 'Dashboard',  icon: 'Dashboard-Verde', class: '', active : false },
+    { path: '/farms', title: 'Campos',  icon:'Campo-Verde', class: '' , active : false},
+    { path: '/?', title: 'Graficador Libre',  icon:'Graficador-libre-verde', class: '', active : false },
+    { path: '/?', title: 'Análisis de suelo',  icon:'Suelo', class: '', active : false },
+    { path: '/?', title: 'Reporte de Instalación',  icon:'Reporte', class: '', active : false },
+    { path: '/?', title: 'Configuración',  icon:'Configuracion', class: '', active : false }, 
     // { path: '/icons', title: 'Icons',  icon:'bubble_chart', class: '' },
     // { path: '/maps', title: 'Maps',  icon:'location_on', class: '' },
     // { path: '/notifications', title: 'Notifications',  icon:'notifications', class: '' },
@@ -23,9 +29,7 @@ export const ROUTES: RouteInfo[] = [
 })
 export class SidebarComponent implements OnInit {
   menuItems: any[];
-
-  constructor() { }
-
+  constructor( public router: Router) {  }
   ngOnInit() {
     this.menuItems = ROUTES.filter(menuItem => menuItem);
   }
@@ -35,4 +39,13 @@ export class SidebarComponent implements OnInit {
       }
       return true;
   };
+  activeHover(value, cond){
+     cond  ? value.active  = true : value.active  = false 
+  }
+  isCurrentRoute(routePath) {
+    if( this.router.url == routePath.path){
+      return true;
+    }
+    return false;
+}
 }

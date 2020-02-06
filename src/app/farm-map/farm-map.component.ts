@@ -4,6 +4,7 @@ import { WiseconnService } from 'app/services/wiseconn.service';
 import { element } from 'protractor';
 import { NgbModal,ModalDismissReasons } from '@ng-bootstrap/ng-bootstrap';
 import { WeatherService } from 'app/services/weather.service';
+import * as Chartist from 'chartist';
 
 @Component({
   selector: 'app-farm-map',
@@ -17,34 +18,51 @@ export class FarmMapComponent implements OnInit {
   public id = 0;
   public url;
   public mediciones;
+  today = Date.now();
+  dataFarm: any;
+  public zones:any[]=[];
   closeResult: string;
-  clima: any;
+  farms;
+
+  //Pronostico values
+  climaLoading = false;
+  climaToday: any;
+  climaDay = [];
+  climaIcon = [];
+  climaMax = [];
+  climaMin = [];
   
   constructor(private _route: ActivatedRoute,private wiseconnService: WiseconnService, public modalService: NgbModal,private router: Router, public weatherService: WeatherService) { }
   ngOnInit() {
     //this.renderMap();
     this.loading = true;
-    this.wiseconnService.getZones(this._route.snapshot.paramMap.get('id')).subscribe((data: {}) => {      
+    this.wiseconnService.getZones(this._route.snapshot.paramMap.get('id')).subscribe((data: any) => {      
       this.loading = false; 
+      this.zones=data;
       this.loadMap(data); 
     });
     let idFarm = (this._route.snapshot.paramMap.get('id'));
+    this.climaLoading = false;
     this.wiseconnService.getFarm(idFarm).subscribe((data) => {
-      console.log(data);
+      //console.log(data);
+      this.dataFarm = data;
       this.weatherService;
       const q = [data.latitude, data.longitude];
       const key = "67a49d3ba5904bef87441658192312";
-      console.log(q);
+    //  console.log(q);
       this.weatherService.getWeather(key,q).subscribe((weather) => {
-        this.clima = (weather.data.weather);
-        // var clima2 = weather.data.current_condition[0];
-        // this.climaRes.push({ name: 'temp_C' , value: clima2.temp_C });
-        // this.climaRes.push({ name: 'temp_F' , value: clima2.temp_F });
-        console.log(weather.data.weather);
+        this.climaToday = weather.data.current_condition[0];
+        var clima = (weather.data.weather);
+        for (const data of clima) {
+              data.iconLabel = data.hourly[0].weatherIconUrl[0];
+              this.climaDay.push(data.date);
+              this.climaIcon.push(data.iconLabel.value);
+              this.climaMax.push(data.maxtempC);
+              this.climaMin.push(data.mintempC);
+        }
+        this.climaLoading = true; 
       });
-      
-      //JLA: Esta funcion switch debe tomar los datos de configuraciones de IRRIMAXLIVE de forma dinñámica con rutas de cada cliente desde base de datos 
-      console.log(data['account']['id']);
+        console.log(data['account']['id']);
         switch (data['account']['id']) { 
           case 63:
             this.url="https://cdtec.irrimaxlive.com/?cmd=signin&username=cdtec&password=l01yliEl7H#/u:3435/Campos/Agrifrut";
@@ -56,8 +74,50 @@ export class FarmMapComponent implements OnInit {
             this.url="";
         } console.log(this.url);
     });
+    this.renderCharts();
+    this.farms=JSON.parse(localStorage.getItem("datafarms"));
+    console.log(this.farms);
   }
+  renderLineChart(){
+    new Chartist.Line('.ct-chart.line-chart', {
+      labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+      series: [
+      [12, 9, 7, 8],
+      [2, 1, 3.5, 7],
+      [1, 3, 4, 5]
+      ]
+    }, {
+      fullWidth: true,
+      chartPadding: {
+        right: 40
+      }
+    });
+  }
+  renderBarChart(){
+    new Chartist.Bar('.ct-chart.bar-chart', {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+      series: [
+      [5, 4, 3, 7]
+      ]
+    }, {
+      seriesBarDistance: 10,
+      axisX: {
+        offset: 60
+      },
+      axisY: {
+        offset: 80,
+        labelInterpolationFnc: function(value) {
+          return value + ' CHF'
+        },
+        scaleMinSpace: 15
+      }
+    });
 
+  }
+  renderCharts(){    
+    this.renderLineChart();
+    this.renderBarChart();
+  }
   renderMap() {
     
     window['initMap'] = () => {
@@ -84,19 +144,38 @@ export class FarmMapComponent implements OnInit {
     }
     
     //Funcion de Click
-    var wisservice = this.wiseconnService;
-    var redirect =  this.router;
-
+      var wisservice = this.wiseconnService;
+      var redirect =  this.router;
+      var zones =this.zones;
     var addListenersOnPolygon = function(polygon,id) {
       //this.loading = true;
-
+      let zone=zones.filter(element => element.id==id)[0];
+      window['google'].maps.event.addListener(polygon, 'mouseover', (event) => {
+        let map=document.getElementById("map-container").firstChild;
+        let tooltip= document.createElement("span");
+        tooltip.id='tooltip-text';
+        tooltip.style.backgroundColor= '#777777';
+        tooltip.style.color= '#FFFFFF';
+        tooltip.style.left= event.tb.offsetX+'px';
+        tooltip.style.top= event.tb.offsetY+'px';
+        tooltip.style.padding= '10px 20px';
+        tooltip.style.position= 'absolute';
+        tooltip.innerHTML= zone.name;
+        map.appendChild(tooltip);
+      });
+      window['google'].maps.event.addListener(polygon, 'mouseout', (event) => {
+        let map=document.getElementById("map-container").firstChild;
+        let tooltip= document.getElementById("tooltip-text");
+        if(tooltip)
+          map.removeChild(tooltip);
+      });
       window['google'].maps.event.addListener(polygon, 'click', () => {
      //   var ids = 0;
 
    //     this.ids = id;
     //   this.obtenerMedidas(id);
-       wisservice.getMeasuresOfZones(id).subscribe((data: {}) => {     
-       wisservice.getIrrigarionsRealOfZones(id).subscribe((dataIrrigations: {}) => {
+       wisservice.getMeasuresOfZones(id).subscribe((data: any) => {     
+       wisservice.getIrrigarionsRealOfZones(id).subscribe((dataIrrigations: any) => {
           redirect.navigate(['/farmpolygon', data[0].farmId, id]);
 
         //     alert('ID Sector: '+id+'\nfarmId: '+data[0].farmId+ '\nESTATUS: '+dataIrrigations[0].status+
@@ -152,7 +231,6 @@ export class FarmMapComponent implements OnInit {
     data.forEach(element => {
       // Construct the polygon.
       wisservice.getIrrigarionsRealOfZones(element.id).subscribe((dataIrrigations: {}) => {
-        //JLA: Por qué las condiciones tienen los IDs fijos, esto debe ser dinámico para cuando se tengan todos los clientes
         if(element.id == "727" || element.id== 727 || element.id == "6054" || element.id == 6054 || element.id == "13872" || element.id == 13872){
           var Triangle = new window['google'].maps.Polygon({
             paths: element.polygon.path,
@@ -167,8 +245,31 @@ export class FarmMapComponent implements OnInit {
          this.loading = true;
          wisservice.getMeterogoAgrifut(element.id).subscribe((data: {}) => { 
           this.loading = false;
-              console.log(data);
-           this.mediciones=data;   
+             console.log(data); //TODO Data de Tabla Clima
+            this.mediciones = data;   
+            for (const item of this.mediciones) {
+                if(item.name == "Velocidad Viento"){
+                  item.name = "Vel. Viento"
+                }
+                if(item.name == "Direccion de viento") {
+                  item.name = "Dir. Viento"
+                }
+                if(item.name == "Radiacion Solar"){
+                  item.name = "Rad. Solar"
+                }  
+                if(item.name == "Wind Direction" || item.name ==  "ATM pressure" || item.name ==  "Wind Speed (period)" || item.name ==  "Porciones de Frío" || item.name ==  "Horas Frío"){
+                  this.deleteValueJson(item.name);
+                }    
+                if(item.name == "Porciones de Frío")  {
+                  this.deleteValueJson(item.name);
+                }
+                if(item.name == "Horas Frío")  {
+                  this.deleteValueJson(item.name);
+                }    
+            }
+             this.deleteValueJson("Et0");
+             this.deleteValueJson("Etp");
+           // console.log(this.mediciones);
          });
         }else{
         
@@ -218,12 +319,15 @@ export class FarmMapComponent implements OnInit {
       
     });
   }
-
+  deleteValueJson(value){
+    var index:number = this.mediciones.indexOf(this.mediciones.find(x => x.name == value));
+    if(index != -1) this.mediciones.splice(index, 1);
+  }
   obtenerMedidas(id){
     this.wiseconnService.getMeasuresOfZones(this.id).subscribe((data: {}) => {      
     })
   }
-  open(content) {
-    this.modalService.open(content);
-  }
+  open(content, sizeValue) {
+    this.modalService.open(content, {size: sizeValue} );
+  } 
 }
