@@ -210,7 +210,7 @@ export class FarmMapComponent implements OnInit {
             return element.id == 185 || element.id == 2110 || element.id == 1378 || element.id == 520
           })
           break;
-        case "santajuana":
+        case "santa juana":
           this.farms = this.farms.filter((element) => {
             return element.id == 719
           })
