@@ -33,6 +33,8 @@ export class SidebarComponent implements OnInit {
   ngOnInit() {
     
     this.menuItems = ROUTES.filter(menuItem => {
+      console.log(localStorage.getItem("username").toLowerCase());
+      
       switch (localStorage.getItem("username").toLowerCase()) {
         case "agrifut":
           if (menuItem.title.toLowerCase()!="dashboard" &&
@@ -40,7 +42,7 @@ export class SidebarComponent implements OnInit {
             return menuItem;
           }
           break;
-        case "santajuana":
+        case "santa juana":
           if (menuItem.title.toLowerCase()!="dashboard" &&
             menuItem.title.toLowerCase()!="campos") {
             return menuItem;
