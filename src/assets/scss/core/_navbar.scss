@@ -62,6 +62,7 @@
 
         .dropdown-menu-right{
             transform-origin: 100% 0;
+            background-color: #33547d;
         }
 
         .nav-item.active .nav-link{
@@ -153,7 +154,7 @@
     }
 
     &.navbar-transparent{
-        background-color: #1c2b36 !important;
+        background-color: #33547d !important;
         box-shadow: none;
         padding-top: 25px;
 
