@@ -9,7 +9,7 @@ import { farmModels } from '../models/farmModels';
 })
 export class WiseconnService {
 
-  baseurl = 'https://cors-anywhere.herokuapp.com/https://apiv2.wiseconn.com';
+  baseurl = 'https://apiv2.wiseconn.com';
 
   httpOptions = {
     headers: new HttpHeaders({
