@@ -3,6 +3,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { WiseconnService } from 'app/services/wiseconn.service';
 import { element } from 'protractor';
 import { NgbModal, NgbDate, NgbCalendar } from '@ng-bootstrap/ng-bootstrap';
+
+//graficas
+import { ChartDataSets, ChartOptions } from 'chart.js';
+import { Color, BaseChartDirective, Label } from 'ng2-charts';
+import * as pluginAnnotations from 'chartjs-plugin-annotation';
+
 import Swal from 'sweetalert2'
 
 import { WeatherService } from 'app/services/weather.service';
@@ -29,6 +35,7 @@ export class FarmMapComponent implements OnInit {
   today = Date.now();
   dataFarm: any;
   public zones: any[] = [];
+  public weatherZones: any[] = [];
   public weatherStation: any = null;
   closeResult: string;
   clima: any;
@@ -38,12 +45,70 @@ export class FarmMapComponent implements OnInit {
   public toDate: NgbDate;
   public dateRange: any = null;
   //graficas
+  @ViewChild(BaseChartDirective, { static: true }) chart: BaseChartDirective;
+  public lineChartData: ChartDataSets[] = [
+    { data: [], label: 'Temperatura' },
+    { data: [], label: 'Humedad', yAxisID: 'y-axis-1' },
+  ];
+  public lineChartLabels: Label[] = [];
+  public lineChartOptions: (ChartOptions & { annotation: any }) = {
+    responsive: true,
+    scales: {
+      // We use this empty structure as a placeholder for dynamic theming.
+      xAxes: [{}],
+      yAxes: [
+        {
+          id: 'y-axis-0',
+          position: 'left',
+        },
+        {
+          id: 'y-axis-1',
+          position: 'right',
+          gridLines: {
+            color: 'rgba(255,0,0,0.3)',
+          },
+          ticks: {
+            fontColor: 'red',
+          }
+        }
+      ]
+    },
+    annotation: {
+      annotations: [{}],
+    },
+    elements: {
+        point: {
+            radius: 0
+        }
+    }
+  };
+  public lineChartColors: Color[] = [
+    { // red
+      backgroundColor:'rgba(255, 255, 255, 0.1)',
+      borderColor:'rgba(255, 0, 0,1)',
+      pointBackgroundColor:'rgba(255, 0, 0,1)',
+      pointBorderColor:'#fff',
+      pointHoverBackgroundColor:'#fff',
+      pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+    },
+    { // blue
+      backgroundColor:'rgba(255, 255, 255, 0.1)',
+      borderColor:'rgba(2,87,154,1)',
+      pointBackgroundColor:'rgba(2, 87, 154,1)',
+      pointBorderColor:'#fff',
+      pointHoverBackgroundColor:'#fff',
+      pointHoverBorderColor:'rgba(2,87,154,0.8)'
+    }
+  ];
+  public lineChartLegend = true;
+  public lineChartType = 'line';
+  public lineChartPlugins = [pluginAnnotations];
+
+
   public temperatureId: number = null;
   public humidityId: number = null;
-  public lineChart: any = {
-    labels: [],
-    series: [[], []]
-  }
+  public renderLineChartFlag : boolean = false;
+
   farms;
 
   //Pronostico values
@@ -53,13 +118,15 @@ export class FarmMapComponent implements OnInit {
   climaIcon = [];
   climaMax = [];
   climaMin = [];
+
   constructor(
     private _route: ActivatedRoute,
     private wiseconnService: WiseconnService,
     public modalService: NgbModal,
     private router: Router,
     public weatherService: WeatherService,
-    private calendar: NgbCalendar) {
+    private calendar: NgbCalendar,
+    private dialogs: MatDialog) {
   }
 
   ngOnInit() {
@@ -67,6 +134,7 @@ export class FarmMapComponent implements OnInit {
 
   }
   init(id) {
+    this.renderLineChartFlag=false;
     this.getFarms();
 
     //rango de fechas para graficas
@@ -123,18 +191,24 @@ export class FarmMapComponent implements OnInit {
           this.url = "";
       }
     });
-    this.renderCharts();
   }
   getZones(id: any) {
     this.loading = true;
     this.wiseconnService.getZones(id).subscribe((data: any) => {
-      this.loading = false;
       this.zones = data;
+      this.weatherZones = data.filter((element)=>{
+        if(element.type.find((element) => {
+            return element === 'Weather';
+          }) != undefined){
+          return element
+        }
+      });
+      this.loading = false;
       for (var i = this.zones.length - 1; i >= 0; i--) {
-        if (this.zones[i].name === "Estación Meteorológica" && this.zones[i].type.map((element) => { return element == "Weather" })[0]) {
+        if (this.zones[i].name == "Estación Meteorológica" || this.zones[i].name == "Estación Metereológica") {
           this.weatherStation = this.zones[i];
+          this.loading = true;
           this.wiseconnService.getMeasuresOfZones(this.weatherStation.id).subscribe((data) => {
-            let temperatureFlag, humidityFlag = false;
             for (var i = data.length - 1; i >= 0; i--) {
               if (data[i].sensorType === "Temperature") {
                 this.temperatureId = data[i].id;
@@ -147,30 +221,52 @@ export class FarmMapComponent implements OnInit {
                   let temperatureData=data;
                   this.wiseconnService.getDataByMeasure(this.humidityId,this.dateRange).subscribe((data) => {
                     let humidityData=data;
-                    for (var i = 0; i < temperatureData.length; i+=30) {
-                      if(this.lineChart.labels.filter((element) => {
-                        return element == moment(temperatureData[i].time).format("YYYY-MM-DD");
-                      }).length == 0) {
-                        this.lineChart.labels.push(moment(temperatureData[i].time).format("YYYY-MM-DD"));
+                    this.loading = false;
+                    temperatureData=temperatureData.map((element)=>{
+                      element.chart="temperature";
+                      return element
+                    })
+                    humidityData=humidityData.map((element)=>{
+                      element.chart="humidity";
+                      return element
+                    })
+                    let chartData=temperatureData.concat(humidityData);
+                    chartData.sort(function (a, b) {
+                      if (moment(a.time).isAfter(b.time)) {
+                        return 1;
                       }
-                      this.lineChart.series[0].push(temperatureData[i].value);
-                      if (i == 0) {
+                      if (!moment(a.time).isAfter(b.time)) {
+                        return -1;
+                      }
+                      // a must be equal to b
+                      return 0;
+                    });
+                    chartData = chartData.filter((element) => {
+                      if(moment(element.time).minutes()==0 || moment(element.time).minutes()==30)
+                        return element;
+                    });
+                    for (var i = 1; i < chartData.length; i+=2) {
+                      if(this.lineChartLabels.find((element) => {
+                        return element === chartData[i].time;//.format("YYYY-MM-DD hh:mm:ss");
+                      }) === undefined) {
+                        this.lineChartLabels.push(chartData[i].time);
+                      }
+                      if (chartData[i].chart==="temperature") {
+                        this.lineChartData[0].data.push(chartData[i].value);
+                      } 
+                      if(chartData[i-1].chart==="humidity"){
+                        this.lineChartData[1].data.push(chartData[i-1].value);
+                      }
                         this.renderCharts();
-                      }
-                    }
-                    for (var i = 0; i < humidityData.length; i+=30) {
-                      if(this.lineChart.labels.filter((element) => {return element == moment(humidityData[i].time).format("YYYY-MM-DD")}).length==0){
-
-                        this.lineChart.labels.push(moment(humidityData[i].time).format("YYYY-MM-DD"));
-
-                      }
-                      this.lineChart.series[1].push(humidityData[i].value);
-                      if (i == 0) {
-                        this.renderCharts();
-                      }
                     }
                   });
                 });
+              }else if(i==0){
+                Swal.fire({
+                  icon: 'info',
+                  title: 'Oops...',
+                  text: 'No tiene configurado los sensores de humedad y temperatura'
+                })
               }
             }
           });
@@ -185,32 +281,31 @@ export class FarmMapComponent implements OnInit {
           text: 'Por favor revisar la data cargada en el campo, ya que no tiene data cargada!'
         })
       } else {
-        if (data[0].max != null) {
-          this.loadMap(data);
-        } else {
-          this.loadMap([]);
-          this.mediciones = [];
-          Swal.fire({
-            icon: 'error',
-            title: 'Oops...',
-            text: 'Por favor revisar la data cargada en el campo, ya que presenta errores, (ubicaciones no cargada, falta data etc) !'
-          })
-        }
+
+         if (data[0].max != null) {
+           this.loadMap(data);
+         } else {
+           this.loadMap([]);
+           this.mediciones = [];
+           Swal.fire({
+             icon: 'error',
+             title: 'Oops...',
+             text: 'Por favor revisar la data cargada en el campo, ya que presenta errores, (ubicaciones no cargada, falta data etc) !'
+           })
+         }
       }
     });
   }
   getFarms() {
     this.wiseconnService.getFarms().subscribe((data: any) => {
       this.farms = data;
-
-
       switch (localStorage.getItem("username").toLowerCase()) {
-        case "agrifut":
+        case "agrifrut":
           this.farms = this.farms.filter((element) => {
             return element.id == 185 || element.id == 2110 || element.id == 1378 || element.id == 520
           })
           break;
-        case "santa juana":
+        case "santajuana":
           this.farms = this.farms.filter((element) => {
             return element.id == 719
           })
@@ -221,20 +316,6 @@ export class FarmMapComponent implements OnInit {
           break;
       }
     })
-  }
-  renderLineChart() {
-    new Chartist.Line('.ct-chart.line-chart', {
-      labels: this.lineChart.labels,
-      series: this.lineChart.series
-    }, {
-      fullWidth: true,
-      // plugins: [
-      //   Chartist.plugins.tooltip()
-      // ],
-      chartPadding: {
-        right: 40
-      }
-    });
   }
   renderBarChart() {
     new Chartist.Bar('.ct-chart.bar-chart', {
@@ -257,8 +338,10 @@ export class FarmMapComponent implements OnInit {
     });
 
   }
+
+
   renderCharts() {
-    this.renderLineChart();
+    this.renderLineChartFlag=true;
     // this.renderBarChart();
   }
   renderMap() {
@@ -291,49 +374,38 @@ export class FarmMapComponent implements OnInit {
     var wisservice = this.wiseconnService;
     var redirect = this.router;
     var zones = this.zones;
+      
+
+    let tooltip = document.createElement("span");
     var addListenersOnPolygon = function (polygon, id) {
-      //this.loading = true;
+    let map = document.getElementById("map-container")?document.getElementById("map-container").firstChild:null;
+    if(map){
       let zone = zones.filter(element => element.id == id)[0];
-      window['google'].maps.event.addListener(polygon, 'mouseover', (event) => {
-        let map = document.getElementById("map-container").firstChild;
-        let tooltip = document.createElement("span");
+      window['google'].maps.event.addListener(polygon, 'mouseover', (event) => {        
         tooltip.id = 'tooltip-text';
         tooltip.style.backgroundColor = '#777777';
         tooltip.style.color = '#FFFFFF';
-        tooltip.style.left = event.tb.offsetX + 'px';
-        tooltip.style.top = event.tb.offsetY + 'px';
-        tooltip.style.padding = '10px 20px';
-        tooltip.style.position = 'absolute';
         tooltip.innerHTML = zone.name;
+        tooltip.style.position = 'absolute';
+        tooltip.style.padding = '20px 20px';
+        tooltip.style.bottom = '0px';
+        // tooltip.style.left = event.tb.offsetX + 'px';
+        // tooltip.style.top = event.tb.offsetY + 'px';
         map.appendChild(tooltip);
       });
       window['google'].maps.event.addListener(polygon, 'mouseout', (event) => {
-        let map = document.getElementById("map-container").firstChild;
-        let tooltip = document.getElementById("tooltip-text");
-        if (tooltip)
-          map.removeChild(tooltip);
+        var elem = document.querySelector('#tooltip-text');
+        elem.parentNode.removeChild(elem);
       });
-      window['google'].maps.event.addListener(polygon, 'click', () => {
-        //   var ids = 0;
-
-        //     this.ids = id;
-        //   this.obtenerMedidas(id);
+      window['google'].maps.event.addListener(polygon, 'click', () => {        
         wisservice.getMeasuresOfZones(id).subscribe((data: any) => {
           wisservice.getIrrigarionsRealOfZones(id).subscribe((dataIrrigations: any) => {
             redirect.navigate(['/farmpolygon', data[0].farmId, id]);
-
-            //     alert('ID Sector: '+id+'\nfarmId: '+data[0].farmId+ '\nESTATUS: '+dataIrrigations[0].status+
-            //   '\nZone ID: '+data[0].zoneId+
-            //   '\nName: '+data[0].name+' \nUnit: '+data[0].unit+ '\nLast Data: '+data[0].lastData+
-            //   '\nLast Data Date: '+data[0].lastDataDate+'\nMonitoring Time: '+data[0].monitoringTime+
-            //   '\nSenson Depth: '+data[0].sensorDepth+'\nDepth Unit: '+data[0].depthUnit+
-            //   '\nNode ID: '+data[0].nodeId//'\nExpansion Port: '+data[0].physicalConnection.expansionPort+
-            // // // '\nExpansionBoard: '+data[0].physicalConnection.expansionBoard+
-            // //  //'\nNode Port: '+data[0].physicalConnection.nodePort+'\nSensor Type: '+data[0].sensorType
-            //   );
           })
         });
       });
+    }
+      
     }
 
     // var marker = new window['google'].maps.Marker({
@@ -387,28 +459,10 @@ export class FarmMapComponent implements OnInit {
           Triangle.setMap(map);
           addListenersOnPolygon(Triangle, element.id);
           this.loading = true;
-          wisservice.getMeterogoAgrifut(element.id).subscribe((data: {}) => {
+          wisservice.getMeterogoAgrifut(element.id).subscribe((data: any) => {
             this.loading = false;
             this.mediciones = data;
             for (const item of this.mediciones) {
-              // if (item.name == "Velocidad Viento") {
-              //   item.name = "Vel. Viento"
-              // }
-              // if (item.name == "Direccion de viento") {
-              //   item.name = "Dir. Viento"
-              // }
-              // if (item.name == "Radiacion Solar") {
-              //   item.name = "Rad. Solar"
-              // }
-              // if (item.name == "Wind Direction" || item.name == "ATM pressure" || item.name == "Wind Speed (period)" || item.name == "Porciones de Frío" || item.name == "Horas Frío") {
-              //   this.deleteValueJson(item.name);
-              // }
-              // if (item.name == "Porciones de Frío") {
-              //   this.deleteValueJson(item.name);
-              // }
-              // if (item.name == "Horas Frío") {
-              //   this.deleteValueJson(item.name);
-              // }
                 if(item.name == "Velocidad Viento"){
                   item.name = "Vel. Viento"
                 }
@@ -516,14 +570,35 @@ export class FarmMapComponent implements OnInit {
     }
   }
   openDialog(): void {
-     const dialogRef = this.dialog.open(DialogMessage, {
+     const dialogRef = this.dialogs.open(DialogMessage, {
        panelClass: 'messagedialogcss'
      });
-
-     dialogRef.afterClosed().subscribe(result => {
-       console.log('The dialog was closed');
-     });
-  } 
+  }
+  formatDate(date:string){
+    let formatDate;
+    if(date.indexOf("Mon")==0){
+      formatDate=date.replace('Mon', 'Lun')
+    }
+    if(date.indexOf("Tue")==0){
+      formatDate=date.replace('Tue', 'Mar')
+    }
+    if(date.indexOf("Wed")==0){
+      formatDate=date.replace('Wed', 'Mie')
+    }
+    if(date.indexOf("Thu")==0){
+      formatDate=date.replace('Thu', 'Jue')
+    }
+    if(date.indexOf("Fri")==0){
+      formatDate=date.replace('Fri', 'Vie')
+    }
+    if(date.indexOf("Sat")==0){
+      formatDate=date.replace('Sat', 'Sab')
+    }
+    if(date.indexOf("Sun")==0){
+      formatDate=date.replace('Sun', 'Dom')
+    }
+    return formatDate;
+  }
 }
 
 

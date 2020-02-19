@@ -41,13 +41,12 @@ import { HttpClientModule } from '@angular/common/http';
     }),
     MaterialModule,
     FlexLayoutModule,
-    HttpClientModule,
+    HttpClientModule
   ], 
   declarations: [
     AppComponent,
     AdminLayoutComponent,
     LoginComponent,
-
   ],
   providers: [],
   bootstrap: [AppComponent]
