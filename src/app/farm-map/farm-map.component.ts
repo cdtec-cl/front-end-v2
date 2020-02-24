@@ -183,7 +183,7 @@ export class FarmMapComponent implements OnInit {
       this.weatherService;
       const q = [data.latitude, data.longitude];
       if (q[0] != null) {
-        const key = "67a49d3ba5904bef87441658192312";
+        const key = "7da96f2f52f54be7a1b123737202102";
         this.weatherService.getWeather(key, q).subscribe((weather) => {
           this.climaDay = [];
           this.climaIcon = [];
@@ -381,6 +381,16 @@ export class FarmMapComponent implements OnInit {
         case "agrifrut":
           this.farms = this.farms.filter((element) => {
             return element.id == 185 || element.id == 2110 || element.id == 1378 || element.id == 520
+          })
+          break;
+        case "agrifrut@cdtec.cl":
+          this.farms = this.farms.filter((element) => {
+            return element.id == 185 || element.id == 2110 || element.id == 1378 || element.id == 520
+          })
+          break;
+          case "santajuana@cdtec.cl":
+          this.farms = this.farms.filter((element) => {
+            return element.id == 719
           })
           break;
         case "santajuana":
