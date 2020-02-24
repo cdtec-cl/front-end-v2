@@ -52,7 +52,7 @@ export class NavbarComponent implements OnInit {
             this.username="SantaJuana";
             break;      
         default:
-            this.username="";
+            this.username="Admin";
           break;
       }
       this.listTitles = SidebarRoute.filter(listTitle => listTitle);
