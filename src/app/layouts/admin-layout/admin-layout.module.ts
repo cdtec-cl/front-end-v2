@@ -18,6 +18,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ChartsModule } from 'ng2-charts';
 
 import { NgxLoadingModule } from 'ngx-loading';
+import { Ng2SearchPipeModule } from 'ng2-search-filter';
 
 import { SafePipePipe } from 'app/pipe/safe-pipe.pipe';
 import { ClientComponent } from 'app/client/client.component';
@@ -36,9 +37,11 @@ import { TableListComponent } from '../../table-list/table-list.component';
 import { TypographyComponent } from '../../typography/typography.component';
 import { UpgradeComponent } from '../../upgrade/upgrade.component';
 import { UserProfileComponent } from '../../user-profile/user-profile.component';
-
+import { ConfigurationComponent } from '../../configuration/configuration.component';
 import { AdminLayoutRoutes } from './admin-layout.routing';
 import { FreePlotterComponent } from 'app/free-plotter/free-plotter.component';
+import { SoilAnalysisComponent } from 'app/soil-analysis/soil-analysis.component';
+
 @NgModule({
   imports: [
     CommonModule,
@@ -55,7 +58,8 @@ import { FreePlotterComponent } from 'app/free-plotter/free-plotter.component';
     NgxLoadingModule.forRoot({}),
     ChartsModule,
     MatDialogModule,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    Ng2SearchPipeModule
   ],
   declarations: [
     DashboardComponent,
@@ -69,12 +73,14 @@ import { FreePlotterComponent } from 'app/free-plotter/free-plotter.component';
     FarmsComponent,
     FarmMapComponent,
     FreePlotterComponent,
+    SoilAnalysisComponent,
     ClientComponent,
     FarmClientComponent,
     SafePipePipe,
     FarmMapPolygonComponent,
     DialogMessage,
-    ReportInstalationComponent
+    ReportInstalationComponent,
+    ConfigurationComponent
   ],
   entryComponents:[
     DialogMessage

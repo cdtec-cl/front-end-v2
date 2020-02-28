@@ -56,13 +56,13 @@
         </mat-select>
       </mat-form-field>
     </div>
-    <div class="row">
+    <div class="row labels-row">
       <div class="col-md-4">
         <div>
           <span class="date-title">{{today | date:'MMMM dd/MM/yyyy'}} </span>
         </div>
       </div>
-      <div class="col-md-8">
+      <div class="col-md-8 ">
         <span *ngIf="dataFarm" class="title-farm">{{dataFarm.name}}</span>
       </div>
     </div>
@@ -138,7 +138,7 @@
               <div class="col-lg-6 col-md-6 col-sm-6">
                 <table class="table-legent">
                   <thead>
-                    <th>
+                    <th *ngIf="statusRegando">
                       <div class="square-temp" style=" background-color: #419FD5;"></div>
                       <span style="color: black; font-size: 10px; margin-left: 10px;">Regando</span>
                     </th>
@@ -146,11 +146,11 @@
                       <div class="square-temp" style=" background-color: #49AA4F;"></div>
                       <span style="color: black; font-size: 10px; margin-left: 10px;">Ok</span>
                     </th>
-                    <th>
+                    <th *ngIf="status">
                       <div class="square-temp" style=" background-color: rgb(233, 58, 189);"></div>
                       <span style="color: black; font-size: 10px; margin-left: 10px;">Estresado</span>
                     </th>
-                    <th>
+                    <th *ngIf="status">
                       <div class="square-temp" style="background-color: red;"></div>
                       <span style="color: black; font-size: 10px; margin-left: 10px;">Seco</span>
                     </th>
@@ -232,17 +232,17 @@
         </div>
       </div>
       <div class="col-md-8" >
-        <div class="container-fluid">
+        <div class="container-fluid" >
           <div class="row ">
-            <h4 class="row-subtitle-card">Temperatura + Humedad</h4>
+            <h4 class="row-subtitle-card">Temperatura/Humedad</h4>
           </div>
           <div class="card-body bg-white chard-size">
-            <div class="flex" *ngIf="renderLineChartFlag">
+            <div class="flex" *ngIf="renderLineChartFlag" style="overflow-x: scroll;">
               <div class="flex-item">
                 <div style="display: block;">
-                <canvas baseChart width="400" height="200"
+                <canvas baseChart width="600" height="300" style="margin: auto;"
                             [datasets]="lineChartData"
-                            [labels]="lineChartLabels"
+                            [labels]="lineChartLabels.labels"
                             [options]="lineChartOptions"
                             [colors]="lineChartColors"
                             [legend]="lineChartLegend"
@@ -253,17 +253,18 @@
             </div>
           </div>
         </div>
-        <div class="container-fluid top">
+        <div class="container-fluid top" style="margin-top: 15px;">
           <div class="row ">
-            <h4 class="row-subtitle-card">Precipitación + ET0</h4>
+            <h4 class="row-subtitle-card">Precipitación+Et0</h4>
           </div>
           <div class="card-body bg-white chard-size">
-            <div  *ngIf="renderBarChartFlag">
+            <div  *ngIf="renderBarChartFlag" style="overflow-x: scroll;">
               <div style="display: block">
-                <canvas baseChart width="400" height="200"
+                <canvas baseChart width="600" height="300" style="margin: auto;"
                   [datasets]="barChartData"
                   [labels]="barChartLabels"
                   [options]="barChartOptions"
+                  [colors]="barChartColors"
                   [plugins]="barChartPlugins"
                   [legend]="barChartLegend"
                   [chartType]="barChartType">

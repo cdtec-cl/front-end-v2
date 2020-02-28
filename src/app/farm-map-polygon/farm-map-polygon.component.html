@@ -227,16 +227,16 @@
         </div>
         <div class="container-fluid top">
           <div class="row ">
-            <h4 class="row-subtitle">Temperatura + Humedad</h4>
+            <h4 class="row-subtitle">Temperatura/Humedad</h4>
           </div>
           <div class="card-body bg-white chard-size">
             <div class="card-body bg-white chard-size">
-              <div class="flex" *ngIf="renderLineChartFlag">
+              <div class="flex" *ngIf="renderLineChartFlag" style="overflow-x: scroll;">
                 <div class="flex-item">
-                  <div style="display: block;">
-                  <canvas baseChart width="400" height="200"
+                  <div style="display: block;margin: auto;">
+                  <canvas baseChart width="600" height="300" style="margin: auto;"
                               [datasets]="lineChartData"
-                              [labels]="lineChartLabels"
+                              [labels]="lineChartLabels.labels"
                               [options]="lineChartOptions"
                               [colors]="lineChartColors"
                               [legend]="lineChartLegend"
@@ -250,15 +250,16 @@
         </div>
         <div class="container-fluid top">
             <div class="row ">
-              <h4 class="row-subtitle">Precipitación + ET0</h4>
+              <h4 class="row-subtitle">Precipitación/Et0</h4>
             </div>
             <div class="card-body bg-white chard-size">
-              <div  *ngIf="renderBarChartFlag">
-                <div style="display: block">
-                  <canvas baseChart
+              <div  *ngIf="renderBarChartFlag" style="overflow-x: scroll;">
+                <div style="display: block;">
+                  <canvas baseChart width="600" height="300" style="margin: auto;"
                     [datasets]="barChartData"
                     [labels]="barChartLabels"
                     [options]="barChartOptions"
+                    [colors]="barChartColors"
                     [plugins]="barChartPlugins"
                     [legend]="barChartLegend"
                     [chartType]="barChartType">
@@ -294,7 +295,7 @@
                   <tbody>
                     <tr>
                       <td> </td>
-                      <td *ngFor="let day of climaDay"> {{formatDate(day | date:'EE ')}} </td>
+                      <td *ngFor="let day of climaDay"> {{day | date:'EE '}} </td>
                     </tr>
                     <tr>
                       <td> </td>

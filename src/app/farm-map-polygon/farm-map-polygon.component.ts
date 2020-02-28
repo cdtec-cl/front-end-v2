@@ -50,9 +50,16 @@ export class FarmMapPolygonComponent implements OnInit {
   { data: [], label: 'Temperatura' },
   { data: [], label: 'Humedad', yAxisID: 'y-axis-1' },
   ];
-  lineChartLabels: Label[] = [];
+  lineChartLabels={
+    labels:[],
+    values:[]
+  };
   lineChartOptions: (ChartOptions & { annotation: any }) = {
-    responsive: true,
+    responsive: false,
+    tooltips: { 
+      mode: 'index', 
+      intersect: false 
+    },
     scales: {
       // We use this empty structure as a placeholder for dynamic theming.
       xAxes: [{}],
@@ -110,9 +117,24 @@ export class FarmMapPolygonComponent implements OnInit {
   renderLineChartFlag : boolean = false;
   //bar chart
   barChartOptions: ChartOptions = {
-    responsive: true,
+    responsive: false,
+    tooltips: { 
+      mode: 'index', 
+      intersect: false 
+    },
     // We use these empty structures as placeholders for dynamic theming.
-    scales: { xAxes: [{}], yAxes: [{}] },
+    scales: { 
+        xAxes: [{}], 
+        yAxes: [
+          {
+            id: 'y-axis-0',
+            position: 'left',
+            ticks: {
+                fontSize: 7
+            }
+          },        
+        ] 
+      },
     plugins: {
       datalabels: {
         anchor: 'end',
@@ -120,26 +142,74 @@ export class FarmMapPolygonComponent implements OnInit {
       }
     }
   };
+  barChartColors: Color[] = [
+  { // blue
+    backgroundColor:'#0168b3',
+    borderColor:'#0168b3',
+    pointBackgroundColor:'rgba(255, 0, 0,1)',
+    pointBorderColor:'#fff',
+    pointHoverBackgroundColor:'#fff',
+    pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+  },
+  { // gray
+    backgroundColor:'#b5b5b5',
+    borderColor:'#b5b5b5',
+    pointBackgroundColor:'rgba(255, 0, 0,1)',
+    pointBorderColor:'#fff',
+    pointHoverBackgroundColor:'#fff',
+    pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+  },
+  { 
+    backgroundColor:'#905ca7',
+    borderColor:'#905ca7',
+    pointBackgroundColor:'rgba(255, 0, 0,1)',
+    pointBorderColor:'#fff',
+    pointHoverBackgroundColor:'#fff',
+    pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+  },
+  { 
+    backgroundColor:'#94c11e',
+    borderColor:'#94c11e',
+    pointBackgroundColor:'rgba(255, 0, 0,1)',
+    pointBorderColor:'#fff',
+    pointHoverBackgroundColor:'#fff',
+    pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+  },
+  { 
+    backgroundColor:'#ffd200',
+    borderColor:'#ffd200',
+    pointBackgroundColor:'rgba(255, 0, 0,1)',
+    pointBorderColor:'#fff',
+    pointHoverBackgroundColor:'#fff',
+    pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+  },
+  ];
   barChartLabels: Label[] = [];
   barChartType: ChartType = 'bar';
   barChartLegend = true;
   barChartPlugins = [];
 
   barChartData: ChartDataSets[] = [
-  { data: [], label: 'Rainfall (mm)' },
-  { data: [], label: 'Et0 (mm)' }
+  { data: [], label: 'Precipitación (mm)' }, 
+  { data: [], label: 'Et0 (mm)' },
+  { data: [], label: 'Velocidad de viento' },
+  { data: [], label: 'Dirección de viento' },
+  { data: [], label: 'Radiación' }  
   ];
+  windVelocityId: number = null;
+  windDirectionId: number = null;
   rainId: number = null;
   et0Id: number = null;
+  radiationId: number = null;
   renderBarChartFlag: boolean = false;
 
   times =[
-    { value: '1D' , active: false},
-    { value: '1S' , active: true},
-    { value: '2S' , active: false},
-    { value: '1M' , active: false},
-    { value: '3M' , active: false},
-    { value: '6M' , active: false},
+  { value: '1D' , active: false},
+  { value: '1S' , active: true},
+  { value: '2S' , active: false},
+  { value: '1M' , active: false},
+  { value: '3M' , active: false},
+  { value: '6M' , active: false},
   ]
 
   //Pronostico values
@@ -163,15 +233,16 @@ export class FarmMapPolygonComponent implements OnInit {
     this.weatherStationId=this._route.snapshot.paramMap.get('farm');
     this.dateRangeByDefault();
     this.wiseconnService.getMeterogoAgrifut(this._route.snapshot.paramMap.get('farm'))
-    .subscribe((data: any) => { 
-      this.farmData = data; 
-      this.wiseconnService.getZones(this._route.snapshot.paramMap.get('id')).subscribe((data: any) => {
-        this.getZone = data;
+    .subscribe((response: any) => { 
+      this.farmData = response.data?response.data:response; 
+      this.wiseconnService.getZones(this._route.snapshot.paramMap.get('id')).subscribe((response: any) => {
+        this.getZone = response.data?response.data:response; 
         this.getZone.forEach(element =>{
-          if(element.id == "727" || element.id== 727 || element.id == "6054" || element.id == 6054 || element.id == "13872" || element.id == 13872){
-            this.wiseconnService.getMeterogoAgrifut(element.id).subscribe((data: any) => { 
+          let id= element.id_wiseconn?element.id_wiseconn:element.id;
+          if(parseInt(id) == 727 || parseInt(id) == 6054 || parseInt(id) == 13872){
+            this.wiseconnService.getMeterogoAgrifut(element.id).subscribe((response: any) => { 
               this.loading = false;
-              this.mediciones=data;   
+              this.mediciones=response.data?response.data:response; 
               for (const item of this.mediciones) {
                 if(item.name == "Velocidad Viento"){
                   item.name = "Vel. Viento"
@@ -219,9 +290,10 @@ export class FarmMapPolygonComponent implements OnInit {
           // //  //'\nNode Port: '+data[0].physicalConnection.nodePort+'\nSensor Type: '+data[0].sensorType
           //   );
           // })
-          this.loadMap2(data); 
-          this.wiseconnService.getFarm(this._route.snapshot.paramMap.get('id')).subscribe((data: {}) => {
-            switch (data['account']['id']) { 
+          this.loadMap2(this.getZone); 
+          this.wiseconnService.getFarm(this._route.snapshot.paramMap.get('id')).subscribe((response: any) => {
+            let accountId=response.data?response.data:response;
+            switch (accountId) { 
               case 63:
               this.url="https://cdtec.irrimaxlive.com/?cmd=signin&username=cdtec&password=l01yliEl7H#/u:3435/Campos/Agrifrut";
               break;
@@ -237,52 +309,6 @@ export class FarmMapPolygonComponent implements OnInit {
           });
         });
     });    
-  }
-  renderBarChart(){
-    new Chartist.Bar('.ct-chart.bar-chart', {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr'],
-      series: [
-      [5, 4, 3, 7]
-      ]
-    }, {
-      seriesBarDistance: 10,
-      axisX: {
-        offset: 60
-      },
-      axisY: {
-        offset: 80,
-        labelInterpolationFnc: function(value) {
-          return value + ' CHF'
-        },
-        scaleMinSpace: 15
-      }
-    });
-
-  }
-  formatDate(date:string){
-    let formatDate;
-    if(date.indexOf("Mon")==0){
-      formatDate=date.replace('Mon', 'Lun')
-    }
-    if(date.indexOf("Tue")==0){
-      formatDate=date.replace('Tue', 'Mar')
-    }
-    if(date.indexOf("Wed")==0){
-      formatDate=date.replace('Wed', 'Mie')
-    }
-    if(date.indexOf("Thu")==0){
-      formatDate=date.replace('Thu', 'Jue')
-    }
-    if(date.indexOf("Fri")==0){
-      formatDate=date.replace('Fri', 'Vie')
-    }
-    if(date.indexOf("Sat")==0){
-      formatDate=date.replace('Sat', 'Sab')
-    }
-    if(date.indexOf("Sun")==0){
-      formatDate=date.replace('Sun', 'Dom')
-    }
-    return formatDate;
   }
   loadMap2(data){
     this.weatherService;
@@ -336,6 +362,7 @@ export class FarmMapPolygonComponent implements OnInit {
       })
     }     
   }
+
   renderMap() {
     window['initMap'] = () => {
       this.loadMap(null);     
@@ -348,12 +375,19 @@ export class FarmMapPolygonComponent implements OnInit {
   loadMap = (data) => {
     if(data.length == 0){
       var map = new window['google'].maps.Map(this.mapElement.nativeElement, {
-        center: {lat: -32.89963602180464, lng: -70.90243510967417},
+        center: {
+          lat: -32.89963602180464, 
+          lng: -70.90243510967417
+        },
         zoom:15
       });
     }else{
+      let path=data[10].polygon?data[10].polygon.path[0]:data[10].path[0];
       var map = new window['google'].maps.Map(this.mapElement.nativeElement, {
-        center: {lat: data[10].polygon.path[0].lat, lng: data[10].polygon.path[0].lng},
+        center: {
+          lat: path.lat, 
+          lng:path.lng
+        },
         zoom:15
       });
     }    
@@ -387,6 +421,7 @@ export class FarmMapPolygonComponent implements OnInit {
 
       });  
     }
+    
     // var marker = new window['google'].maps.Marker({
       //   position: {lat: -32.232403, lng: -70.827825},
       //   map: map,
@@ -423,10 +458,11 @@ export class FarmMapPolygonComponent implements OnInit {
         data.forEach(element => {
           // Construct the polygon.
           let idFarm = this._route.snapshot.paramMap.get('id');
+          let paths=element.path?element.path:element.polygon.path;
           wisservice.getIrrigarionsRealOfZones(idFarm).subscribe((dataIrrigations: any) => {
             if(idFarm == "727" || element.id== 727 || element.id == "6054" || element.id == 6054 || element.id == "13872" || element.id == 13872){
               var Triangle = new window['google'].maps.Polygon({
-                paths: element.polygon.path,
+                paths: paths,
                 strokeColor: '#E5C720',
                 strokeOpacity: 0.8,
                 strokeWeight: 2,
@@ -444,7 +480,7 @@ export class FarmMapPolygonComponent implements OnInit {
 
               if(dataIrrigations[0].status == "Executed OK"){
                 var Triangle = new window['google'].maps.Polygon({
-                  paths: element.polygon.path,
+                  paths: paths,
                   strokeColor: '#49AA4F',
                   strokeOpacity: 0.8,
                   strokeWeight: 2,
@@ -456,7 +492,7 @@ export class FarmMapPolygonComponent implements OnInit {
               }else{
                 if(dataIrrigations[0].status == "Running"){
                   var Triangle = new window['google'].maps.Polygon({
-                    paths: element.polygon.path,
+                    paths: paths,
                     strokeColor: '#419FD5',
                     strokeOpacity: 0.8,
                     strokeWeight: 2,
@@ -467,7 +503,7 @@ export class FarmMapPolygonComponent implements OnInit {
                   addListenersOnPolygon(Triangle, element.id);
                 }else{
                   var Triangle = new window['google'].maps.Polygon({
-                    paths: element.polygon.path,
+                    paths: paths,
                     strokeColor: '#FF0000',
                     strokeOpacity: 0.8,
                     strokeWeight: 2,
@@ -498,6 +534,20 @@ export class FarmMapPolygonComponent implements OnInit {
       deleteValueJson(value){
         var index:number = this.mediciones.indexOf(this.mediciones.find(x => x.name == value));
         if(index != -1) this.mediciones.splice(index, 1);
+      }
+      format(value:string,chart:string){
+        switch (chart) {
+          case "line":
+          return moment.utc(value).format('DD') +" "+ moment(value).format('MMM');
+          break;
+          case "bar":
+          return moment.utc(value).format('DD') +" "+ moment(value).format('MMM');
+          break;
+          default:
+          return value;
+          break;
+        }
+        
       }
       //datepicker
       onDateSelection(date: NgbDate,element:string) {
@@ -573,167 +623,225 @@ export class FarmMapPolygonComponent implements OnInit {
           });
         }
         this.loading = true;
-        this.wiseconnService.getMeasuresOfZones(this.weatherStationId).subscribe((data) => {
+        this.wiseconnService.getMeasuresOfZones(this.weatherStationId).subscribe((response) => {
+          let data=response.data?response.data:response;
           for (var i = data.length - 1; i >= 0; i--) {
             //bar chart
-            if (data[i].sensorType === "Rain") {
-              this.rainId = data[i].id;
+            if (data[i].sensorType != undefined && data[i].name != undefined){
+              if ((data[i].sensorType).toLowerCase() === "rain" && (data[i].name).toLowerCase() === "pluviometro") {
+                this.rainId = data[i].id;
+              }
             }
-            if (data[i].name.toLowerCase() === "et0") {
-              this.et0Id = data[i].id;
+            if (data[i].sensorType != undefined && data[i].name != undefined){
+              if ((data[i].sensorType).toLowerCase() === "wind velocity" && (data[i].name).toLowerCase() === "velocidad viento") {
+                this.windVelocityId = data[i].id;
+              }
             }
-            if(this.rainId&&this.et0Id){
-              this.wiseconnService.getDataByMeasure(this.rainId,this.dateRange).subscribe((data) => {
-                let rainData=data;
-                this.wiseconnService.getDataByMeasure(this.et0Id,this.dateRange).subscribe((data) => {
-                  let et0Data=data;
-                  this.loading = false;
-                  rainData=rainData.map((element)=>{
-                    element.chart="rain";
-                    return element
-                  })
-                  et0Data=et0Data.map((element)=>{
-                    element.chart="et0";
-                    return element;
-                  })
-                  let chartData=rainData.concat(et0Data);
-                  chartData.sort(function (a, b) {
-                    if (moment(a.time).isAfter(b.time)) {
-                      return 1;
-                    }
-                    if (!moment(a.time).isAfter(b.time)) {
-                      return -1;
-                    }
-                    // a must be equal to b
-                    return 0;
+            if (data[i].sensorType != undefined && data[i].name != undefined){
+              if ((data[i].sensorType).toLowerCase() === "wind direction" && (data[i].name).toLowerCase() === "direccion de viento") {
+                this.windDirectionId = data[i].id;
+              }
+            }
+            if (data[i].sensorType != undefined && data[i].name != undefined){
+              if ((data[i].sensorType).toLowerCase() === "solar radiation" && (data[i].name).toLowerCase() === "radiacion solar") {
+                this.radiationId = data[i].id;
+              }
+            }
+            if ((data[i].name) != undefined){
+              if ((data[i].name).toLowerCase() === "et0") {
+                this.et0Id = data[i].id;
+              }
+            }
+            if(this.rainId&&this.et0Id&&this.windVelocityId&&this.windDirectionId&&this.radiationId){
+              this.wiseconnService.getDataByMeasure(this.rainId,this.dateRange).subscribe((response) => {
+                let rainData=response.data?response.data:response;
+                this.wiseconnService.getDataByMeasure(this.et0Id,this.dateRange).subscribe((response) => {
+                  let et0Data=response.data?response.data:response;
+                  this.wiseconnService.getDataByMeasure(this.windVelocityId,this.dateRange).subscribe((response) => {
+                    let windVelocityData=response.data?response.data:response;
+                    this.wiseconnService.getDataByMeasure(this.windDirectionId,this.dateRange).subscribe((response) => {
+                      let windDirectionData=response.data?response.data:response;
+                      this.wiseconnService.getDataByMeasure(this.radiationId,this.dateRange).subscribe((response) => {
+                        let radiationData=response.data?response.data:response;
+                        this.loading = false;
+                        rainData=rainData.map((element)=>{
+                          element.chart="rain";
+                          return element
+                        })
+                        et0Data=et0Data.map((element)=>{
+                          element.chart="et0";
+                          return element;
+                        })
+                        windVelocityData=windVelocityData.map((element)=>{
+                          element.chart="windvelocity";
+                          return element;
+                        })
+                        windDirectionData=windDirectionData.map((element)=>{
+                          element.chart="winddirection";
+                          return element;
+                        })
+                        radiationData=radiationData.map((element)=>{
+                          element.chart="radiation";
+                          return element;
+                        })
+                        let chartData=rainData.concat(et0Data.concat(windVelocityData.concat(windDirectionData.concat(radiationData))));
+                        chartData.sort(function (a, b) {
+                          if (moment(a.time).isAfter(b.time)) {
+                            return 1;
+                          }
+                          if (!moment(a.time).isAfter(b.time)) {
+                            return -1;
+                          }
+                          return 0;
+                        });
+                        chartData=chartData.filter((element)=>{
+                          if(moment.utc(element.time).format("HH:mm:ss")=="00:00:00"){                            
+                            return element;
+                          }
+                        })
+                        this.resetChartsValues("bar");
+                        for (var i = 0; i < chartData.length; i++) {
+                          if(chartData[i+1]&&chartData[i+2]&&chartData[i+3]&&chartData[i+4]){
+                            if(chartData[i].time===chartData[i+1].time && chartData[i+1].time===chartData[i+2].time && chartData[i+2].time===chartData[i+3].time && chartData[i+3].time===chartData[i+4].time){
+                              this.barChartLabels.push(this.format(chartData[i].time,"bar"));                    
+                            }  
+                          }
+                          if(chartData[i].chart=="rain") {
+                            this.barChartData[0].data.push(chartData[i].value);
+                          }
+                          if(chartData[i].chart=="et0") {
+                            this.barChartData[1].data.push(chartData[i].value);
+                          }
+                          if(chartData[i].chart=="windvelocity") {
+                            this.barChartData[2].data.push(chartData[i].value);
+                          }
+                          if(chartData[i].chart=="winddirection") {
+                            this.barChartData[3].data.push(chartData[i].value);
+                          }
+                          if(chartData[i].chart=="radiation") {
+                            this.barChartData[4].data.push(chartData[i].value);
+                          }
+                          this.renderCharts("bar");
+                        }
+                      });
+                      
+                    });
+                    
                   });
-                  console.log("chartData:",chartData)
-                  this.resetChartsValues("bar");
-                  for (var i = 0; i < chartData.length; i++) {
-                    if(chartData[i+1]){
-                      if(chartData[i].time===chartData[i+1].time){
-                        this.barChartLabels.push(chartData[i].time);                    
-                      }  
-                    }                  
-                    if(chartData[i].chart=="rain") {
-                      this.barChartData[0].data.push(chartData[i].value);
-                    }
-                    if(chartData[i].chart=="et0") {
-                      this.barChartData[1].data.push(chartData[i].value);
-                    }                  
-                    this.renderCharts("bar");
-                  }
                 });
-              });
-            }
-            //line chart
-            if (data[i].sensorType === "Temperature") {
-              this.temperatureId = data[i].id;
-            }
-            if (data[i].sensorType === "Humidity") {
-              this.humidityId = data[i].id;
-            }
-            if(this.temperatureId&&this.humidityId){
-              this.wiseconnService.getDataByMeasure(this.temperatureId,this.dateRange).subscribe((data) => {
-                let temperatureData=data;
-                this.wiseconnService.getDataByMeasure(this.humidityId,this.dateRange).subscribe((data) => {
-                  let humidityData=data;
-                  this.loading = false;
-                  temperatureData=temperatureData.map((element)=>{
-                    element.chart="temperature";
-                    return element
-                  })
-                  humidityData=humidityData.map((element)=>{
-                    element.chart="humidity";
-                    return element
-                  })
-                  let chartData=temperatureData.concat(humidityData);
-                  chartData.sort(function (a, b) {
-                    if (moment(a.time).isAfter(b.time)) {
-                      return 1;
-                    }
-                    if (!moment(a.time).isAfter(b.time)) {
-                      return -1;
-                    }
-                    // a must be equal to b
-                    return 0;
-                  });
-                  chartData = chartData.filter((element) => {
-                    if(moment(element.time).minutes()==0 || moment(element.time).minutes()==30)
-                      return element;
-                  });
-                  this.resetChartsValues("line");
-                  for (var i = 1; i < chartData.length; i+=2) {
-                    if(this.lineChartLabels.find((element) => {
-                      return element === chartData[i].time;//.format("YYYY-MM-DD hh:mm:ss");
-                    }) === undefined) {
-                      this.lineChartLabels.push(chartData[i].time);
-                    }
-                    if (chartData[i].chart==="temperature") {
-                      this.lineChartData[0].data.push(chartData[i].value);
-                    } 
-                    if(chartData[i-1].chart==="humidity"){
-                      this.lineChartData[1].data.push(chartData[i-1].value);
-                    }
-                    this.renderCharts("line");
-                  }
-                });
-              });
-            }else if(i==0){
-              Swal.fire({
-                icon: 'error',
-                title: 'Oops...',
-                text: 'No tiene configurado los sensores de humedad y temperatura'
-              })
-            }
-          }
-        });
-      }
-      renderCharts(chart:string) {
-        switch (chart) {
-          case "line":
-            this.renderLineChartFlag=true;
-            break;
-          case "bar":
-            this.renderBarChartFlag=true;
-            break;
-          default:
-            this.renderBarChartFlag=true;            
-            this.renderLineChartFlag=true;
-            break;
+});
+}
+//line chart
+if (data[i].sensorType === "Temperature") {
+  this.temperatureId = data[i].id;
+}
+if (data[i].sensorType === "Humidity") {
+  this.humidityId = data[i].id;
+}
+if(this.temperatureId&&this.humidityId){
+  this.wiseconnService.getDataByMeasure(this.temperatureId,this.dateRange).subscribe((response) => {
+    let temperatureData=response.data?response.data:response;
+    this.wiseconnService.getDataByMeasure(this.humidityId,this.dateRange).subscribe((response) => {
+      let humidityData=response.data?response.data:response;
+      this.loading = false;
+      temperatureData=temperatureData.map((element)=>{
+        element.chart="temperature";
+        return element
+      })
+      humidityData=humidityData.map((element)=>{
+        element.chart="humidity";
+        return element
+      })
+      let chartData=temperatureData.concat(humidityData);
+      chartData.sort(function (a, b) {
+        if (moment(a.time).isAfter(b.time)) {
+          return 1;
         }
-      }
-      resetChartsValues(chart:string){
-        switch (chart) {
-          case "line":
-            this.lineChartLabels=[];
-            this.lineChartData[0].data=[];
-            this.lineChartData[1].data=[];
-            break;  
-          case "bar":
-            this.barChartLabels=[];
-            this.barChartData[0].data=[];
-            this.barChartData[1].data=[];
-            break;
-          default:
-            // code...
-            break;
+        if (!moment(a.time).isAfter(b.time)) {
+          return -1;
         }
+        // a must be equal to b
+        return 0;
+      });
+      chartData = chartData.filter((element) => {
+        if(moment(element.time).minutes()==0 || moment(element.time).minutes()==30)
+          return element;
+      });
+      this.resetChartsValues("line");
+      for (var i = 1; i < chartData.length; i+=2) {
+        if(this.lineChartLabels.values.find((element) => {
+          return element === chartData[i].time;
+        }) === undefined) {
+          this.lineChartLabels.values.push(this.format(chartData[i].time,null));
+          this.lineChartLabels.labels.push(this.format(chartData[i].time,"line"));
+        }
+        if (chartData[i].chart==="temperature") {
+          this.lineChartData[0].data.push(chartData[i].value);
+        } 
+        if(chartData[i-1].chart==="humidity"){
+          this.lineChartData[1].data.push(chartData[i-1].value);
+        }
+        this.renderCharts("line");
       }
-      isHovered(date: NgbDate) {
-        return this.fromDate && !this.toDate && this.hoveredDate && date.after(this.fromDate) && date.before(this.hoveredDate);
-      }
+    });
+  });
+}else if(i==0){
+  Swal.fire({
+    icon: 'error',
+    title: 'Oops...',
+    text: 'No tiene configurado los sensores de humedad y temperatura'
+  })
+}
+}
+});
+}
+renderCharts(chart:string) {
+  switch (chart) {
+    case "line":
+    this.renderLineChartFlag=true;
+    break;
+    case "bar":
+    this.renderBarChartFlag=true;
+    break;
+    default:
+    this.renderBarChartFlag=true;            
+    this.renderLineChartFlag=true;
+    break;
+  }
+}
+resetChartsValues(chart:string){
+  switch (chart) {
+    case "line":
+    this.lineChartLabels.labels=[];
+    this.lineChartLabels.values=[];
+    this.lineChartData[0].data=[];
+    this.lineChartData[1].data=[];
+    break;  
+    case "bar":
+        this.barChartLabels=[];
+        for (var i = 0; i < 5; i++) {
+              this.barChartData[i].data=[];
+            }
+    break;
+    default:
+    // code...
+    break;
+  }
+}
+isHovered(date: NgbDate) {
+  return this.fromDate && !this.toDate && this.hoveredDate && date.after(this.fromDate) && date.before(this.hoveredDate);
+}
 
-      isInside(date: NgbDate) {
-        return date.after(this.fromDate) && date.before(this.toDate);
-      }
+isInside(date: NgbDate) {
+  return date.after(this.fromDate) && date.before(this.toDate);
+}
 
-      isRange(date: NgbDate) {
-        return date.equals(this.fromDate) || date.equals(this.toDate) || this.isInside(date) || this.isHovered(date);
-      }
+isRange(date: NgbDate) {
+  return date.equals(this.fromDate) || date.equals(this.toDate) || this.isInside(date) || this.isHovered(date);
+}
 
-      validateInput(currentValue: NgbDate, input: string): NgbDate {
-        const parsed = this.formatter.parse(input);
-        return parsed && this.calendar.isValid(NgbDate.from(parsed)) ? NgbDate.from(parsed) : currentValue;
-      }
-    }
+validateInput(currentValue: NgbDate, input: string): NgbDate {
+  const parsed = this.formatter.parse(input);
+  return parsed && this.calendar.isValid(NgbDate.from(parsed)) ? NgbDate.from(parsed) : currentValue;
+}
+}

@@ -40,9 +40,16 @@ export class FreePlotterComponent implements OnInit {
 	{ data: [], label: 'Temperatura' },
 	{ data: [], label: 'Humedad', yAxisID: 'y-axis-1' },
 	];
-	lineChartLabels: Label[] = [];
+	lineChartLabels={
+	    labels:[],
+	    values:[]
+	  };
 	lineChartOptions: (ChartOptions & { annotation: any }) = {
-		responsive: true,
+		responsive: false,
+		tooltips: { 
+	      mode: 'index', 
+	      intersect: false 
+	    },
 		scales: {
 			// We use this empty structure as a placeholder for dynamic theming.
 			xAxes: [{}],
@@ -99,9 +106,24 @@ export class FreePlotterComponent implements OnInit {
 
 	//bar chart
 	barChartOptions: ChartOptions = {
-		responsive: true,
+		responsive: false,
+		tooltips: { 
+	      mode: 'index', 
+	      intersect: false 
+	    },
 		// We use these empty structures as placeholders for dynamic theming.
-		scales: { xAxes: [{}], yAxes: [{}] },
+		scales: { 
+	      xAxes: [{}], 
+	      yAxes: [
+	        {
+	          id: 'y-axis-0',
+	          position: 'left',
+	          ticks: {
+	              fontSize: 7
+	          }
+	        },        
+	      ] 
+	    },
 		plugins: {
 			datalabels: {
 				anchor: 'end',
@@ -109,17 +131,65 @@ export class FreePlotterComponent implements OnInit {
 			}
 		}
 	};
+	barChartColors: Color[] = [
+	    { // blue
+	      backgroundColor:'#0168b3',
+	      borderColor:'#0168b3',
+	      pointBackgroundColor:'rgba(255, 0, 0,1)',
+	      pointBorderColor:'#fff',
+	      pointHoverBackgroundColor:'#fff',
+	      pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+	    },
+	    { // gray
+	      backgroundColor:'#b5b5b5',
+	      borderColor:'#b5b5b5',
+	      pointBackgroundColor:'rgba(255, 0, 0,1)',
+	      pointBorderColor:'#fff',
+	      pointHoverBackgroundColor:'#fff',
+	      pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+	    },
+	    { 
+	      backgroundColor:'#905ca7',
+	      borderColor:'#905ca7',
+	      pointBackgroundColor:'rgba(255, 0, 0,1)',
+	      pointBorderColor:'#fff',
+	      pointHoverBackgroundColor:'#fff',
+	      pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+	    },
+	    { 
+	      backgroundColor:'#94c11e',
+	      borderColor:'#94c11e',
+	      pointBackgroundColor:'rgba(255, 0, 0,1)',
+	      pointBorderColor:'#fff',
+	      pointHoverBackgroundColor:'#fff',
+	      pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+	    },
+	    { 
+	      backgroundColor:'#ffd200',
+	      borderColor:'#ffd200',
+	      pointBackgroundColor:'rgba(255, 0, 0,1)',
+	      pointBorderColor:'#fff',
+	      pointHoverBackgroundColor:'#fff',
+	      pointHoverBorderColor: 'rgba(255, 0, 0,0.8)'
+	    },
+	  ];
 	barChartLabels: Label[] = [];
 	barChartType: ChartType = 'bar';
 	barChartLegend = true;
 	barChartPlugins = [];
 
 	barChartData: ChartDataSets[] = [
-	{ data: [], label: 'Rainfall (mm)' },
-	{ data: [], label: 'Et0 (mm)' }
-	];
-	rainId: number = null;
-	et0Id: number = null;
+	  { data: [], label: 'Precipitación (mm)' }, 
+	  { data: [], label: 'Et0 (mm)' },
+	  { data: [], label: 'Velocidad de viento' },
+	  { data: [], label: 'Dirección de viento' },
+	  { data: [], label: 'Radiación' }  
+	  ];
+	  windVelocityId: number = null;
+	  windDirectionId: number = null;
+	  rainId: number = null;
+	  et0Id: number = null;
+	  radiationId: number = null;
 	renderBarChartFlag: boolean = false;
 
 	times =[
@@ -142,9 +212,9 @@ export class FreePlotterComponent implements OnInit {
 	}
 	getFarms() {
 		this.loading=true;
-		this.wiseconnService.getFarms().subscribe((data: any) => {			
+		this.wiseconnService.getFarms().subscribe((response: any) => {			
 			this.loading=false;
-			this.farms = data;
+			this.farms = response.data?response.data:response;
 			switch (localStorage.getItem("username").toLowerCase()) {
 				case "agrifrut":
 				this.farms = this.farms.filter((element) => {
@@ -162,10 +232,11 @@ export class FreePlotterComponent implements OnInit {
 				})
 				break;
 				case "santajuana@cdtec.cl":
-					this.farms = this.farms.filter((element) => {
-						return element.id == 719
-					})
-					break;
+				this.farms = this.farms.filter((element) => {
+					return element.id == 719
+				})
+				break;
+
 				default:
 				// code...
 				break;
@@ -174,12 +245,17 @@ export class FreePlotterComponent implements OnInit {
 	}
 	getZones(id:number=0) {
 		this.loading = true;
-		this.wiseconnService.getZones(id).subscribe((data: any) => {
+		this.wiseconnService.getZones(id).subscribe((response: any) => {
+			let data=response.data?response.data:response;
 			this.weatherZones = data.filter((element)=>{
-				if(element.type.find((element) => {
-					return element === 'Weather';
-				}) != undefined){
-					return element
+				if(element.type){
+					if(element.type.length>0){
+						if(element.type.find((element) => {
+							return element === 'Weather' || (element.description!=undefined&&element.description === 'Weather');
+						}) != undefined){
+							return element
+						}
+					}
 				}
 			});
 			this.loading = false;
@@ -277,6 +353,19 @@ export class FreePlotterComponent implements OnInit {
 		});
 		this.requestDataChart(true);
 	}
+    format(value:string,chart:string){
+      switch (chart) {
+        case "line":
+          	return moment.utc(value).format('DD') +" "+ moment.utc(value).format('MMM');
+          	break;
+        case "bar":
+          	return moment.utc(value).format('DD') +" "+ moment.utc(value).format('MMM');
+          	break;
+        default:
+          	return value;
+          	break;
+      }      
+    }
 	requestDataChart(goBackFlag:boolean=false){		
 		//bar chart
 		this.rainId=null;
@@ -297,59 +386,114 @@ export class FreePlotterComponent implements OnInit {
 		}
 		if(this.zoneSelected){
 			this.loading = true;
-			this.wiseconnService.getMeasuresOfZones(this.zoneSelected.id).subscribe((data) => {
+			this.wiseconnService.getMeasuresOfZones(this.zoneSelected.id).subscribe((response) => {
+				let data=response.data?response.data:response;
 				for (var i = data.length - 1; i >= 0; i--) {
 					//bar chart
-					if (data[i].sensorType === "Rain") {
-						this.rainId = data[i].id;
-					}
-					if (data[i].name.toLowerCase() === "et0") {
-						this.et0Id = data[i].id;
-					}
-					if(this.rainId&&this.et0Id){
-						this.wiseconnService.getDataByMeasure(this.rainId,this.dateRange).subscribe((data) => {
-							let rainData=data;
-							this.wiseconnService.getDataByMeasure(this.et0Id,this.dateRange).subscribe((data) => {
-								let et0Data=data;
-								this.loading = false;
-								rainData=rainData.map((element)=>{
-									element.chart="rain";
-									return element
-								})
-								et0Data=et0Data.map((element)=>{
-									element.chart="et0";
-									return element;
-								})
-								let chartData=rainData.concat(et0Data);
-								chartData.sort(function (a, b) {
-									if (moment(a.time).isAfter(b.time)) {
-										return 1;
-									}
-									if (!moment(a.time).isAfter(b.time)) {
-										return -1;
-									}
-									// a must be equal to b
-									return 0;
-								});
-								console.log("chartData:",chartData)
-								this.resetChartsValues("bar");
-								for (var i = 0; i < chartData.length; i++) {
-									if(chartData[i+1]){
-										if(chartData[i].time===chartData[i+1].time){
-											this.barChartLabels.push(chartData[i].time);										
-										}	
-									}									
-									if(chartData[i].chart=="rain") {
-										this.barChartData[0].data.push(chartData[i].value);
-									}
-									if(chartData[i].chart=="et0") {
-										this.barChartData[1].data.push(chartData[i].value);
-									}									
-									this.renderCharts("bar");
-								}
-							});
-						});
-					}
+		              if (data[i].sensorType != undefined && data[i].name != undefined){
+		                if ((data[i].sensorType).toLowerCase() === "rain" && (data[i].name).toLowerCase() === "pluviometro") {
+		                  this.rainId = data[i].id;
+		                }
+		              }
+		              if (data[i].sensorType != undefined && data[i].name != undefined){
+		                if ((data[i].sensorType).toLowerCase() === "wind velocity" && (data[i].name).toLowerCase() === "velocidad viento") {
+		                  this.windVelocityId = data[i].id;
+		                }
+		              }
+		              if (data[i].sensorType != undefined && data[i].name != undefined){
+		                if ((data[i].sensorType).toLowerCase() === "wind direction" && (data[i].name).toLowerCase() === "direccion de viento") {
+		                  this.windDirectionId = data[i].id;
+		                }
+		              }
+		              if (data[i].sensorType != undefined && data[i].name != undefined){
+		                if ((data[i].sensorType).toLowerCase() === "solar radiation" && (data[i].name).toLowerCase() === "radiacion solar") {
+		                  this.radiationId = data[i].id;
+		                }
+		              }
+		              if ((data[i].name) != undefined){
+		                if ((data[i].name).toLowerCase() === "et0") {
+		                  this.et0Id = data[i].id;
+		                }
+		              }
+		              if(this.rainId&&this.et0Id&&this.windVelocityId&&this.windDirectionId&&this.radiationId){
+		                this.wiseconnService.getDataByMeasure(this.rainId,this.dateRange).subscribe((response) => {
+		                  let rainData=response.data?response.data:response;
+		                  this.wiseconnService.getDataByMeasure(this.et0Id,this.dateRange).subscribe((response) => {
+		                    let et0Data=response.data?response.data:response;
+		                    this.wiseconnService.getDataByMeasure(this.windVelocityId,this.dateRange).subscribe((response) => {
+		                      let windVelocityData=response.data?response.data:response;
+		                      this.wiseconnService.getDataByMeasure(this.windDirectionId,this.dateRange).subscribe((response) => {
+		                        let windDirectionData=response.data?response.data:response;
+		                        this.wiseconnService.getDataByMeasure(this.radiationId,this.dateRange).subscribe((response) => {
+		                          let radiationData=response.data?response.data:response;
+		                          this.loading = false;
+		                          rainData=rainData.map((element)=>{
+		                            element.chart="rain";
+		                            return element
+		                          })
+		                          et0Data=et0Data.map((element)=>{
+		                            element.chart="et0";
+		                            return element;
+		                          })
+		                          windVelocityData=windVelocityData.map((element)=>{
+		                            element.chart="windvelocity";
+		                            return element;
+		                          })
+		                          windDirectionData=windDirectionData.map((element)=>{
+		                            element.chart="winddirection";
+		                            return element;
+		                          })
+		                          radiationData=radiationData.map((element)=>{
+		                            element.chart="radiation";
+		                            return element;
+		                          })
+		                          let chartData=rainData.concat(et0Data.concat(windVelocityData.concat(windDirectionData.concat(radiationData))));
+		                          chartData.sort(function (a, b) {
+		                            if (moment(a.time).isAfter(b.time)) {
+		                              return 1;
+		                            }
+		                            if (!moment(a.time).isAfter(b.time)) {
+		                              return -1;
+		                            }
+		                            return 0;
+		                          });
+		                          chartData=chartData.filter((element)=>{
+		                            if(moment.utc(element.time).format("HH:mm:ss")=="00:00:00"){                            
+		                              return element;
+		                            }
+		                          })
+		                          this.resetChartsValues("bar");
+		                          for (var i = 0; i < chartData.length; i++) {
+		                            if(chartData[i+1]&&chartData[i+2]&&chartData[i+3]&&chartData[i+4]){
+		                              if(chartData[i].time===chartData[i+1].time && chartData[i+1].time===chartData[i+2].time && chartData[i+2].time===chartData[i+3].time && chartData[i+3].time===chartData[i+4].time){
+		                                this.barChartLabels.push(this.format(chartData[i].time,"bar"));                    
+		                              }  
+		                            }
+		                            if(chartData[i].chart=="rain") {
+		                              this.barChartData[0].data.push(chartData[i].value);
+		                            }
+		                            if(chartData[i].chart=="et0") {
+		                              this.barChartData[1].data.push(chartData[i].value);
+		                            }
+		                            if(chartData[i].chart=="windvelocity") {
+		                              this.barChartData[2].data.push(chartData[i].value);
+		                            }
+		                            if(chartData[i].chart=="winddirection") {
+		                              this.barChartData[3].data.push(chartData[i].value);
+		                            }
+		                            if(chartData[i].chart=="radiation") {
+		                              this.barChartData[4].data.push(chartData[i].value);
+		                            }
+		                            this.renderCharts("bar");
+		                          }
+		                        });
+		                        
+		                      });
+		                      
+		                    });
+		                  });
+		                });
+		              }
 					//line chart
 					if (data[i].sensorType === "Temperature") {
 						this.temperatureId = data[i].id;
@@ -358,10 +502,10 @@ export class FreePlotterComponent implements OnInit {
 						this.humidityId = data[i].id;
 					}
 					if(this.temperatureId&&this.humidityId){
-						this.wiseconnService.getDataByMeasure(this.temperatureId,this.dateRange).subscribe((data) => {
-							let temperatureData=data;
-							this.wiseconnService.getDataByMeasure(this.humidityId,this.dateRange).subscribe((data) => {
-								let humidityData=data;
+						this.wiseconnService.getDataByMeasure(this.temperatureId,this.dateRange).subscribe((response) => {
+							let temperatureData=response.data?response.data:response;
+							this.wiseconnService.getDataByMeasure(this.humidityId,this.dateRange).subscribe((response) => {
+								let humidityData=response.data?response.data:response;
 								this.loading = false;
 								temperatureData=temperatureData.map((element)=>{
 									element.chart="temperature";
@@ -388,11 +532,12 @@ export class FreePlotterComponent implements OnInit {
 								});
 								this.resetChartsValues("line");
 								for (var i = 1; i < chartData.length; i+=2) {
-									if(this.lineChartLabels.find((element) => {
-										return element === chartData[i].time;//.format("YYYY-MM-DD hh:mm:ss");
-									}) === undefined) {
-										this.lineChartLabels.push(chartData[i].time);
-									}
+									if(this.lineChartLabels.values.find((element) => {
+				                      return element === chartData[i].time;
+				                    }) === undefined) {
+				                      this.lineChartLabels.values.push(this.format(chartData[i].time,null));
+				                      this.lineChartLabels.labels.push(this.format(chartData[i].time,"line"));
+				                    }
 									if (chartData[i].chart==="temperature") {
 										this.lineChartData[0].data.push(chartData[i].value);
 									} 
@@ -424,14 +569,16 @@ export class FreePlotterComponent implements OnInit {
 	resetChartsValues(chart:string){
 		switch (chart) {
 			case "line":
-				this.lineChartLabels=[];
-				this.lineChartData[0].data=[];
-				this.lineChartData[1].data=[];
+				this.lineChartLabels.labels=[];
+		        this.lineChartLabels.values=[];
+		        this.lineChartData[0].data=[];
+		        this.lineChartData[1].data=[];
 				break;	
 			case "bar":
 				this.barChartLabels=[];
-				this.barChartData[0].data=[];
-				this.barChartData[1].data=[];
+				for (var i = 0; i < 5; i++) {
+		          this.barChartData[i].data=[];
+		        }
 				break;
 			default:
 				// code...

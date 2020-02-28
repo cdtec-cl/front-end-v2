@@ -7,6 +7,7 @@ hr.separated{
     background-color: whitesmoke;
     height: 1px;
     margin-left: 2%;
+    margin: 0 2%; 
 }
 .justify-text-general {
     display: flex;
@@ -26,9 +27,14 @@ hr.separated{
     }
 }
 
-table {
+.table-responsive {
     border-collapse: collapse;
     width: 100%;
+    overflow: hidden; 
+    @media screen and (max-width: 995px) {
+       display: block;
+       overflow: auto; 
+      }
     th{
         text-align: center;
         background-color: #f2f3f5;
@@ -84,6 +90,7 @@ table {
     }
 
     .justify-text-general .mat-input-custom ,  .justify-text-password .mat-input-custom  {
+        margin: 7px 0 -13px 0;
         .mat-form-field-flex {
             border: 1px solid silver;
             border-radius: 5px;

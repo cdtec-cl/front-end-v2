@@ -16,6 +16,9 @@ import { TypographyComponent } from '../../typography/typography.component';
 import { UpgradeComponent } from '../../upgrade/upgrade.component';
 import { UserProfileComponent } from '../../user-profile/user-profile.component';
 import { FreePlotterComponent } from 'app/free-plotter/free-plotter.component';
+import { ConfigurationComponent } from '../../configuration/configuration.component';
+
+import { SoilAnalysisComponent } from 'app/soil-analysis/soil-analysis.component';
 
 export const AdminLayoutRoutes: Routes = [
     // {
@@ -63,6 +66,7 @@ export const AdminLayoutRoutes: Routes = [
     { path: 'dashboard',      component: DashboardComponent },
     { path: 'user-profile',   component: UserProfileComponent },
     { path: 'report-instalacion',   component: ReportInstalationComponent },
+    { path: 'configuration',   component: ConfigurationComponent },
     { path: 'table-list',     component: TableListComponent },
     { path: 'typography',     component: TypographyComponent },
     { path: 'icons',          component: IconsComponent },
@@ -75,5 +79,6 @@ export const AdminLayoutRoutes: Routes = [
     { path: 'client-farm/:id', component:  FarmClientComponent, pathMatch:  'full' },
     { path: 'farmpolygon/:id/:farm', component:  FarmMapPolygonComponent, pathMatch:  'full' },
     { path: 'free-plotter', component:  FreePlotterComponent, pathMatch:  'full' },
+    { path: 'soil-analysis', component:  SoilAnalysisComponent, pathMatch:  'full' },
     
 ];
