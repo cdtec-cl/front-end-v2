@@ -5,6 +5,7 @@ import { FarmClientComponent } from 'app/farm-client/farm-client.component';
 import { FarmMapPolygonComponent } from 'app/farm-map-polygon/farm-map-polygon.component';
 
 import { DashboardComponent } from '../../dashboard/dashboard.component';
+import { WeatherMonitoringComponent } from '../../weather-monitoring/weather-monitoring.component';
 import { FarmMapComponent } from '../../farm-map/farm-map.component';
 import { FarmsComponent } from '../../farms/farms.component';
 import { IconsComponent } from '../../icons/icons.component';
@@ -64,6 +65,7 @@ export const AdminLayoutRoutes: Routes = [
     //     }]
     // }
     { path: 'dashboard',      component: DashboardComponent },
+    { path: 'weather-monitoring',      component: WeatherMonitoringComponent },
     { path: 'user-profile',   component: UserProfileComponent },
     { path: 'report-instalacion',   component: ReportInstalationComponent },
     { path: 'configuration',   component: ConfigurationComponent },

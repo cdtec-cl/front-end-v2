@@ -12,9 +12,10 @@ declare interface RouteInfo {
 export const ROUTES: RouteInfo[] = [
    { path: '/user-profile', title: 'Perfil',  icon: 'Usuario-verde', class: '', active : false },
     { path: '/dashboard', title: 'Dashboard',  icon: 'Dashboard-Verde', class: '', active : false },
+    { path: '/weather-monitoring', title: 'Monitoreo del clima',  icon:'Graficador-libre-verde', class: '', active : false },
     { path: '/farms', title: 'Campos',  icon:'Campo-Verde', class: '' , active : false},
-    { path: '/free-plotter', title: 'Graficador Libre',  icon:'Graficador-libre-verde', class: '', active : false },
-    { path: '/soil-analysis', title: 'Análisis de suelo',  icon:'Suelo', class: '', active : false },
+    { path: '/free-plotter', title: 'Analizador Gráfico',  icon:'Graficador-libre-verde', class: '', active : false },
+    { path: '/soil-analysis', title: 'Humedad de Suelo',  icon:'Suelo', class: '', active : false },
     { path: '/report-instalacion', title: 'Reporte de Instalación',  icon:'Reporte', class: '', active : false },
     { path: '/configuration', title: 'Configuración',  icon:'Configuracion', class: '', active : false }
     // { path: '/icons', title: 'Icons',  icon:'bubble_chart', class: '' },
@@ -32,34 +33,7 @@ export class SidebarComponent implements OnInit {
   constructor( public router: Router) {  }
   ngOnInit() {
     
-    this.menuItems = ROUTES.filter(menuItem => {
-      switch (localStorage.getItem("username").toLowerCase()) {
-        case "agrifrut":
-          if (menuItem.title.toLowerCase()!="dashboard") {
-            return menuItem;
-          }
-          break;
-          case "agrifrut@cdtec.cl":
-          if (menuItem.title.toLowerCase()!="dashboard") {
-            return menuItem;
-          }
-          break;
-        case "santajuana":
-          if (menuItem.title.toLowerCase()!="dashboard") {
-            return menuItem;
-          }
-          break;      
-          case "santajuana@cdtec.cl":
-          if (menuItem.title.toLowerCase()!="dashboard") {
-            return menuItem;
-          }
-          break;    
-        default:
-          return menuItem;
-          break;
-      }
-      
-    });
+      this.menuItems = ROUTES.filter(menuItem => menuItem);
   }
   isMobileMenu() {
       if ($(window).width() > 991) {
