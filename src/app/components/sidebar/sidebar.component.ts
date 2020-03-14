@@ -14,7 +14,7 @@ export const ROUTES: RouteInfo[] = [
     { path: '/dashboard', title: 'Dashboard',  icon: 'Dashboard-Verde', class: '', active : false },
     { path: '/weather-monitoring', title: 'Monitoreo del clima',  icon:'Graficador-libre-verde', class: '', active : false },
     { path: '/farms', title: 'Campos',  icon:'Campo-Verde', class: '' , active : false},
-    { path: '/free-plotter', title: 'Analizador Gráfico',  icon:'Graficador-libre-verde', class: '', active : false },
+    { path: '/free-plotter', title: 'Analizador Grafico',  icon:'Graficador-libre-verde', class: '', active : false },
     { path: '/soil-analysis', title: 'Humedad de Suelo',  icon:'Suelo', class: '', active : false },
     { path: '/report-instalacion', title: 'Reporte de Instalación',  icon:'Reporte', class: '', active : false },
     { path: '/configuration', title: 'Configuración',  icon:'Configuracion', class: '', active : false }

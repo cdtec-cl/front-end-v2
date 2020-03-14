@@ -285,13 +285,15 @@ export class FarmMapComponent implements OnInit {
         tooltip.style.backgroundColor = '#777777';
         tooltip.style.color = '#FFFFFF';
         if(zone.status!=undefined){
-          switch ((zone.status).toLowerCase()) {
-            case "running":
-            tooltip.innerHTML = zone.name + " - Regando";
+          switch ((zone.type.length)) {
+            case 1:
+            tooltip.innerHTML = zone.name + " - "+zone.type[0];
             break;
-            case "executed ok":
-            tooltip.innerHTML = zone.name + " - Ok";
+            case 2:
+            tooltip.innerHTML = zone.name + " - "+ zone.type[0]+" , "+ zone.type[1];
             break;
+            case 3:
+            tooltip.innerHTML = zone.name + " - "+ zone.type[0]+" , "+ zone.type[1]+" , "+ zone.type[2];
             default:
             break;
           }
@@ -481,5 +483,26 @@ export class FarmMapComponent implements OnInit {
       this.loadMap();
     }
   }
-   
+  openDialog(): void {
+     const dialogRef = this.dialogs.open(DialogMessage, {
+       panelClass: 'messagedialogcss'
+     });
+  }   
+}
+@Component({
+  selector: 'message-dialog',
+  templateUrl: 'message-dialog.html',
+  styleUrls: ['./message-dialog.scss'],
+})
+export class DialogMessage {
+
+  constructor(
+    public dialogRef: MatDialogRef<DialogMessage>,
+    // @Inject(MAT_DIALOG_DATA) public data 
+    ) {}
+
+  onNoClick(): void {
+    this.dialogRef.close();
+  }
+
 }
