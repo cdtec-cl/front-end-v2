@@ -29,7 +29,7 @@ export class FarmMapPolygonComponent implements OnInit {
   public loading = false;
   public id = 0;
   public url;
-  public mediciones;
+  public measurements;
   public clima;
   public climaRes: any = [];
   public farmData: any;
@@ -63,7 +63,6 @@ export class FarmMapPolygonComponent implements OnInit {
   public lineChartOptions:any = {
       chart: {
           type: 'spline',
-
       },
       colors: ['#D12B34','#00B9EE'],
       title: {
@@ -192,7 +191,7 @@ export class FarmMapPolygonComponent implements OnInit {
     this.weatherStationId=this._route.snapshot.paramMap.get('farm');
     this.wiseconnService.getMeterogoAgrifut(this._route.snapshot.paramMap.get('farm'))
     .subscribe((response: any) => { 
-      this.farmData = response.data?response.data:response; 
+      this.farmData = response.data?response.data:response;
       this.wiseconnService.getZones(this._route.snapshot.paramMap.get('id')).subscribe((response: any) => {
         this.getZone = response.data?response.data:response; 
         this.getZone.forEach(element =>{
@@ -200,29 +199,8 @@ export class FarmMapPolygonComponent implements OnInit {
           if(parseInt(id) == 727 || parseInt(id) == 6054 || parseInt(id) == 13872){
             this.wiseconnService.getMeterogoAgrifut(element.id).subscribe((response: any) => { 
               this.loading = false;
-              this.mediciones=response.data?response.data:response; 
-              for (const item of this.mediciones) {
-                if(item.name == "Velocidad Viento"){
-                  item.name = "Vel. Viento"
-                }
-                if(item.name == "Direccion de viento") {
-                  item.name = "Dir. Viento"
-                }
-                if(item.name == "Radiacion Solar"){
-                  item.name = "Rad. Solar"
-                }  
-                if(item.name == "Wind Direction" || item.name ==  "ATM pressure" || item.name ==  "Wind Speed (period)" || item.name ==  "Porciones de Frío" || item.name ==  "Horas Frío"){
-                  this.deleteValueJson(item.name);
-                }    
-                if(item.name == "Porciones de Frío")  {
-                  this.deleteValueJson(item.name);
-                }
-                if(item.name == "Horas Frío")  {
-                  this.deleteValueJson(item.name);
-                }    
-              }
-              this.deleteValueJson("Et0");
-              this.deleteValueJson("Etp");
+               this.measurements =response.data?response.data:response;
+              this.processMeasurements();
             });
           }
         });
@@ -274,9 +252,10 @@ export class FarmMapPolygonComponent implements OnInit {
           this.climaLoading = true;
         }
       });
+      let path=farmPolygon.polygon?farmPolygon.polygon.path:farmPolygon.path;
       if(farmPolygon.latitude == undefined && farmPolygon.latitude == undefined){
         var map = new window['google'].maps.Map(this.mapElement.nativeElement, {
-          center: {lat:  farmPolygon.polygon.path[0].lat, lng: farmPolygon.polygon.path[0].lng},
+          center: {lat:  path[0].lat, lng: path[0].lng},
           zoom:15,
           mapTypeId: window['google'].maps.MapTypeId.HYBRID
         });
@@ -288,7 +267,7 @@ export class FarmMapPolygonComponent implements OnInit {
         });
       } 
       var flightPath = new window['google'].maps.Polygon({
-        paths: farmPolygon.polygon.path,
+        paths: path,
         strokeColor: '#49AA4F',
         strokeOpacity: 0.8,
         strokeWeight: 2,
@@ -389,7 +368,7 @@ export class FarmMapPolygonComponent implements OnInit {
         data.forEach(element => {
           // Construct the polygon.
           let idFarm = this._route.snapshot.paramMap.get('id');
-          let paths=element.path?element.path:element.polygon.path;
+          let paths=element.polygon?element.polygon.path:element.path;
           wisservice.getIrrigarionsRealOfZones(idFarm).subscribe((dataIrrigations: any) => {
             if(idFarm == "727" || element.id== 727 || element.id == "6054" || element.id == 6054 || element.id == "13872" || element.id == 13872){
               var Triangle = new window['google'].maps.Polygon({
@@ -402,11 +381,15 @@ export class FarmMapPolygonComponent implements OnInit {
               });
               Triangle.setMap(map);
               addListenersOnPolygon(Triangle, element.id);
-              this.loading = true;
-              wisservice.getMeterogoAgrifut(element.id).subscribe((data: {}) => { 
-                this.loading = false;
-                this.mediciones=data;
-              });
+              if (element.name == "Estación Meteorológica" || element.name == "Estación Metereológica") {
+                this.loading = true;
+                wisservice.getMeterogoAgrifut(element.id).subscribe((response: any) => {
+                  this.loading = false;
+                  this.measurements = response.data?response.data:response;
+                  this.setLocalStorageItem("lastMeasurements",this.getJSONStringify(this.measurements));
+                  this.processMeasurements();
+                }) 
+              }
             }else{
 
               if(dataIrrigations[0].status == "Executed OK"){
@@ -455,6 +438,33 @@ export class FarmMapPolygonComponent implements OnInit {
 
         });
       }
+      processMeasurements(){
+        for (const item of this.measurements) {
+          if(item.name == "Velocidad Viento"){
+            item.name = "Vel. Viento"
+          }
+          if(item.name == "Direccion de viento") {
+            item.name = "Dir. Viento"
+          }
+          if(item.name == "Radiacion Solar"){
+            item.name = "Rad. Solar"
+          }   
+          if(item.name == "Station Relative Humidity"){
+            item.name = " Sta. Rel. Humidity "
+          }  
+          if(item.name == "Wind Direction" || item.name ==  "ATM pressure" || item.name ==  "Wind Speed (period)" || item.name ==  "Porciones de Frío" || item.name ==  "Horas Frío"){
+            this.deleteValueJson(item.name);
+          }    
+          if(item.name == "Porciones de Frío")  {
+            this.deleteValueJson(item.name);
+          }
+          if(item.name == "Horas Frío")  {
+            this.deleteValueJson(item.name);
+          }    
+        }
+        this.deleteValueJson("Et0");
+        this.deleteValueJson("Etp");
+      }
       obtenerMedidas(id){
         this.wiseconnService.getMeasuresOfZones(this.id).subscribe((data: {}) => {      
         })
@@ -463,8 +473,8 @@ export class FarmMapPolygonComponent implements OnInit {
         this.modalService.open(content);
       }
       deleteValueJson(value){
-        var index:number = this.mediciones.indexOf(this.mediciones.find(x => x.name == value));
-        if(index != -1) this.mediciones.splice(index, 1);
+        var index:number = this.measurements.indexOf(this.measurements.find(x => x.name == value));
+        if(index != -1) this.measurements.splice(index, 1);
       }
       momentFormat(value:string,chart:string){
         switch (chart) {
@@ -478,6 +488,24 @@ export class FarmMapPolygonComponent implements OnInit {
               return value;
               break;
         }      
+      }
+      setLocalStorageItem(key,value){
+        localStorage.setItem(key,value);
+      }
+      getJSONStringify(data) {
+        var cache = [];
+        var result =null;
+        result=JSON.stringify(data, function(key, value) {
+          if (typeof value === 'object' && value !== null) {
+            if (cache.indexOf(value) !== -1) {
+              return;
+            }
+            cache.push(value);
+          }
+          return value;
+        });
+        cache = null;
+        return result;
       }
       //datepicker
       onDateSelection(date: NgbDate,element:string) {

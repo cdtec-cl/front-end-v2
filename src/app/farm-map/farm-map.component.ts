@@ -55,8 +55,9 @@ export class FarmMapComponent implements OnInit {
   getFarms() {
     this.wiseconnService.getFarms().subscribe((response: any) => {
       this.farms = response.data?response.data:response;
-      this.filterFarmsByUser();            
-      this.farm=this.getFarm(this._route.snapshot.paramMap.get('id'));
+      this.filterFarmsByUser();
+      this.farm=this.getFarm(this._route.snapshot.paramMap.get('id'));      
+      this.wiseconnService.farmId=this.farm.id;
       if(this.farm){
         if(localStorage.getItem("lastFarmId")!=undefined){
           if(parseInt(localStorage.getItem("lastFarmId"))==parseInt(this.farm.id)){
@@ -133,9 +134,15 @@ export class FarmMapComponent implements OnInit {
     }
   }
   getFarm(id){
-    return this.farms.find(element =>{
+    let farm = this.farms.find(element =>{
       return element.id==id || element.id_wiseconn==id
     });
+    if(!farm){
+      if(this.farms[0]){
+        farm=this.farms[0];
+      }
+    }
+    return farm;
   }
   getWeather(){
     if (this.farm.latitude && this.farm.longitude) {
@@ -250,30 +257,33 @@ export class FarmMapComponent implements OnInit {
   addMarkerImage(map,element,urlImage){
     let lat;
     let lng;
-    if(element.latitude){
-      lat=element.latitude;
-    }else if(element.path){
-      lat=element.path[0].lat;
-    }else if(element.polygon.path){
-      lat=element.polygon.path[0].lat;
+    if(element.path!=undefined){
+      if(element.path.length>0){
+        lat=parseFloat(element.path[0].lat);
+        lng=parseFloat(element.path[0].lng);
+      }else if(element.latitude && element.longitude){
+        lat=parseFloat(element.latitude);
+        lng=parseFloat(element.longitude);
+      }
+    }else if(element.polygon!=undefined){
+      if(element.polygon.path.length>0){
+        lat=parseFloat(element.polygon.path[0].lat);
+        lng=parseFloat(element.polygon.path[0].lng);
+      }
     }
-    if(element.longitude){
-      lng=element.longitude;
-    }else if(element.path){
-      lng=element.path[0].lng;
-    }else if(element.polygon.path){
-      lng=element.polygon.path[0].lng;
+    if(lat && lng){
+      var marker = new window['google'].maps.Marker({
+          position: {lat: lat, lng: lng},
+          map: map,
+          icon: {
+              url: urlImage, // url
+              scaledSize: new window['google'].maps.Size(30, 30), // scaled size
+              origin: new window['google'].maps.Point(0,0), // origin
+              anchor: new window['google'].maps.Point(0, 0) // anchor
+          }
+      });
     }
-    var marker = new window['google'].maps.Marker({
-        position: {lat: lat, lng: lng},
-        map: map,
-        icon: {
-            url: urlImage, // url
-            scaledSize: new window['google'].maps.Size(30, 30), // scaled size
-            origin: new window['google'].maps.Point(0,0), // origin
-            anchor: new window['google'].maps.Point(0, 0) // anchor
-        }
-    });
+    
   }
   addListenersOnPolygon(polygon, id){
     let tooltip = document.createElement("span");
@@ -283,17 +293,17 @@ export class FarmMapComponent implements OnInit {
       window['google'].maps.event.addListener(polygon, 'mouseover', (event) => {        
         tooltip.id = 'tooltip-text';
         tooltip.style.backgroundColor = '#777777';
-        tooltip.style.color = '#FFFFFF';
+        tooltip.style.color = '#FFFFFF';        
         if(zone.status!=undefined){
           switch ((zone.type.length)) {
             case 1:
-            tooltip.innerHTML = zone.name + " - "+zone.type[0];
+            tooltip.innerHTML = zone.name + " - "+zone.type[0].description;
             break;
             case 2:
-            tooltip.innerHTML = zone.name + " - "+ zone.type[0]+" , "+ zone.type[1];
+            tooltip.innerHTML = zone.name + " - "+ zone.type[0].description+" , "+ zone.type[1].description;
             break;
             case 3:
-            tooltip.innerHTML = zone.name + " - "+ zone.type[0]+" , "+ zone.type[1]+" , "+ zone.type[2];
+            tooltip.innerHTML = zone.name + " - "+ zone.type[0].description+" , "+ zone.type[1].description+" , "+ zone.type[2].description;
             default:
             break;
           }
@@ -392,15 +402,17 @@ export class FarmMapComponent implements OnInit {
           this.addListenersOnPolygon(Triangle, element.id);   
         } else {
           if (data != "") {
-            if (data[0].status == "Executed OK") {
+            let runningElement=data.find(element =>{return element.status == "Running"});
+            if (runningElement==undefined) { //status 'ok'
               this.zones.map((zone)=>{
                 if(zone.id==element.id||zone.id_wiseconn==element.id){
                   element.status=data[0].status
                 }
                 return element;
               });
+              let path=element.polygon?element.polygon.path:element.path;
               let polygonData={
-                paths: element.path?element.path:element.polygon.path,
+                paths: path,
                 strokeColor: '#49AA4F',
                 strokeOpacity: 0.8,
                 strokeWeight: 2,
@@ -415,10 +427,10 @@ export class FarmMapComponent implements OnInit {
               Triangle.setMap(map);
               this.addListenersOnPolygon(Triangle, element.id);
             } else {
-              if (data[0].status == "Running") {
+              if(runningElement) { //status 'running'
                 this.zones.map((zone)=>{
                   if(zone.id==element.id||zone.id_wiseconn==element.id){
-                    element.status=data[0].status
+                    element.status=runningElement.status
                   }                  
                 this.statusRegando=true;
                   return element;
@@ -434,7 +446,8 @@ export class FarmMapComponent implements OnInit {
                 var Triangle = new window['google'].maps.Polygon(polygonData);                
                 polygonDatas.push({element:element,data:polygonData});
                 this.setLocalStorageItem("lastPolygonData",JSON.stringify(polygonDatas));
-                 // Marker Image          
+                 // Marker Image
+                 console.log("element:",element)
                 this.addMarkerImage(map, element,  "../../assets/icons/map/Regando-01.svg");                  
                 Triangle.setMap(map);
                 this.addListenersOnPolygon(Triangle,element.id);
@@ -466,6 +479,7 @@ export class FarmMapComponent implements OnInit {
     switch (select) {
       case "farm":
         this.farm=this.getFarm(id);
+        this.wiseconnService.farmId=this.farm.id;
         this.getZones();
         this.getWeather();
         break;

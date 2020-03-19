@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef , Inject, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { element } from 'protractor';
-import { NgbModal, NgbDate, NgbCalendar } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal,ModalDismissReasons , NgbDate, NgbCalendar, NgbDateParserFormatter} from '@ng-bootstrap/ng-bootstrap';
 
 //notificaciones
 import Swal from 'sweetalert2'
@@ -51,6 +51,8 @@ export class WeatherMonitoringComponent implements OnInit,OnDestroy {
   public fromDate: NgbDate;
   public toDate: NgbDate;
   public dateRange: any = null;
+  public hoveredDate: NgbDate;
+  public requestChartBtn: boolean =true;
 
   //graficas
   //linechart
@@ -186,6 +188,7 @@ export class WeatherMonitoringComponent implements OnInit,OnDestroy {
     private router: Router,
     public weatherService: WeatherService,
     private calendar: NgbCalendar,
+    private formatter: NgbDateParserFormatter,
     private dialogs: MatDialog) {
   }
 
@@ -203,7 +206,10 @@ export class WeatherMonitoringComponent implements OnInit,OnDestroy {
           this.zones = JSON.parse(localStorage.getItem('lastZones'));
           this.weatherZones=this.getWeatherZones();
           this.loadMap();
+          this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -5);
+          this.toDate = this.calendar.getToday();
           this.getChartInformation();
+          this.processMapData();
         }else{
           this.getZones();
         }
@@ -261,6 +267,7 @@ export class WeatherMonitoringComponent implements OnInit,OnDestroy {
       this.setLocalStorageItem("lastZones",this.getJSONStringify(this.zones));
       this.loadMap();
       this.getChartInformation();
+      this.processMapData();
     });
   }
   getWeather(){
@@ -309,6 +316,7 @@ export class WeatherMonitoringComponent implements OnInit,OnDestroy {
       this.setLocalStorageItem("lastLineChartData",this.getJSONStringify(this.lineChartData));
       this.setLocalStorageItem("lastBarChartLabels",this.getJSONStringify(this.barChartLabels));
       this.setLocalStorageItem("lastBarChartData",this.getJSONStringify(this.barChartData));
+      this.wiseconnService.farmId=id;
       this.farm=this.getFarm(id);
       this.getZones();
       this.getWeather();
@@ -343,7 +351,10 @@ export class WeatherMonitoringComponent implements OnInit,OnDestroy {
   getWeatherZones(){
     return this.zones.filter((element)=>{
       if(element.type.find(element=>{
-        return element.toLowerCase() == "weather"
+        if(element.description){
+          return element.description.toLowerCase() == "weather"
+        }
+        return element.toLowerCase() == "weather" 
       })!=undefined){
         return element;
       }
@@ -359,8 +370,7 @@ export class WeatherMonitoringComponent implements OnInit,OnDestroy {
                                 getChartInformation(){
                                   this.resetChartsValues("line");
                                   this.resetChartsValues("bar");                               
-                                  this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -5);
-                                  this.toDate = this.calendar.getToday();
+                                  
                                   this.dateRange = {
                                     initTime: moment(this.fromDate.year + "-" + this.fromDate.month + "-" + this.fromDate.day).format("YYYY-MM-DD"),
                                     endTime: moment(this.toDate.year + "-" + this.toDate.month + "-" + this.toDate.day).format("YYYY-MM-DD")
@@ -368,11 +378,14 @@ export class WeatherMonitoringComponent implements OnInit,OnDestroy {
                                   let weatherStationFlag=false;
                                   let i=0;
                                   while (!weatherStationFlag && i < this.zones.length) {
+                                      this.loading=true;
                                     if (this.zones[i].name == "Estación Meteorológica" || this.zones[i].name == "Estación Metereológica") {
                                       weatherStationFlag=true;
                                       this.weatherStation = this.zones[i];
                                       this.wiseconnService.getMeasuresOfZones(this.weatherStation.id).subscribe((response) => {
+        
         let data=response.data?response.data:response;
+                                      
         let barFlag=false;
         let lineFlag=false;
         let j=0;
@@ -515,7 +528,12 @@ export class WeatherMonitoringComponent implements OnInit,OnDestroy {
 }
 i++;
 }
-if (this.zones.length == 0) {
+
+        this.loading=false;
+
+}
+processMapData(){
+  if (this.zones.length == 0) {
   this.loadMap();
   this.measurements = [];
   Swal.fire({
@@ -537,7 +555,6 @@ if (this.zones.length == 0) {
   }
 } 
 }
-
 getJSONStringify(data) {
   var cache = [];
   var result =null;
@@ -625,33 +642,36 @@ processMeasurements(){
   this.deleteValueJson("Etp");
 }
 addMarkerImage(map,element,urlImage){
-  let lat;
-  let lng;
-  if(element.latitude){
-    lat=element.latitude;
-  }else if(element.path){
-    lat=element.path[0].lat;
-  }else if(element.polygon.path){
-    lat=element.polygon.path[0].lat;
-  }
-  if(element.longitude){
-    lng=element.longitude;
-  }else if(element.path){
-    lng=element.path[0].lng;
-  }else if(element.polygon.path){
-    lng=element.polygon.path[0].lng;
-  }
-  var marker = new window['google'].maps.Marker({
-    position: {lat: lat, lng: lng},
-    map: map,
-    icon: {
-      url: urlImage, // url
-      scaledSize: new window['google'].maps.Size(30, 30), // scaled size
-      origin: new window['google'].maps.Point(0,0), // origin
-      anchor: new window['google'].maps.Point(0, 0) // anchor
+    let lat;
+    let lng;
+    if(element.path!=undefined){
+      if(element.path.length>0){
+        lat=parseFloat(element.path[0].lat);
+        lng=parseFloat(element.path[0].lng);
+      }else if(element.latitude && element.longitude){
+        lat=parseFloat(element.latitude);
+        lng=parseFloat(element.longitude);
+      }
+    }else if(element.polygon!=undefined){
+      if(element.polygon.path.length>0){
+        lat=parseFloat(element.polygon.path[0].lat);
+        lng=parseFloat(element.polygon.path[0].lng);
+      }
     }
-  });
-}
+    if(lat && lng){
+      var marker = new window['google'].maps.Marker({
+          position: {lat: lat, lng: lng},
+          map: map,
+          icon: {
+              url: urlImage, // url
+              scaledSize: new window['google'].maps.Size(30, 30), // scaled size
+              origin: new window['google'].maps.Point(0,0), // origin
+              anchor: new window['google'].maps.Point(0, 0) // anchor
+          }
+      });
+    }
+    
+  }
 addListenersOnPolygon(polygon, id){
   let tooltip = document.createElement("span");
   let mapContainer = document.getElementById("map-container")?document.getElementById("map-container").firstChild:null;
@@ -662,13 +682,15 @@ addListenersOnPolygon(polygon, id){
       tooltip.style.backgroundColor = '#777777';
       tooltip.style.color = '#FFFFFF';
       if(zone.status!=undefined){
-        switch ((zone.status).toLowerCase()) {
-          case "running":
-          tooltip.innerHTML = zone.name + " - Regando";
+        switch ((zone.type.length)) {
+          case 1:
+          tooltip.innerHTML = zone.name + " - "+zone.type[0].description;
           break;
-          case "executed ok":
-          tooltip.innerHTML = zone.name + " - Ok";
+          case 2:
+          tooltip.innerHTML = zone.name + " - "+ zone.type[0].description+" , "+ zone.type[1].description;
           break;
+          case 3:
+          tooltip.innerHTML = zone.name + " - "+ zone.type[0].description+" , "+ zone.type[1].description+" , "+ zone.type[2].description;
           default:
           break;
         }
@@ -768,14 +790,17 @@ loadMap() {
         // Marker Image          
         this.addMarkerImage(map, element, "https://i.imgur.com/C7gyw7N.png");
         Triangle.setMap(map);
-        this.addListenersOnPolygon(Triangle, element.id);
-        this.loading = true;
-        wisservice.getMeterogoAgrifut(element.id).subscribe((response: any) => {
-          this.loading = false;
-          this.measurements = response.data?response.data:response;
-          this.setLocalStorageItem("lastMeasurements",this.getJSONStringify(this.measurements));
-          this.processMeasurements();
-        })      
+        this.addListenersOnPolygon(Triangle, element.id);        
+        if (element.name == "Estación Meteorológica" || element.name == "Estación Metereológica") {
+          this.loading = true;
+          wisservice.getMeterogoAgrifut(element.id).subscribe((response: any) => {
+            this.loading = false;
+            this.measurements = response.data?response.data:response;
+            this.setLocalStorageItem("lastMeasurements",this.getJSONStringify(this.measurements));
+            this.processMeasurements();
+          }) 
+        }
+             
       } else {
         if (data != "") {
           if (data[0].status == "Executed OK") {
@@ -904,6 +929,34 @@ translateDate(date:string){
     }
   }    
   return newDate;
+}
+//datepicker
+onDateSelection(date: NgbDate,element:string) {
+  switch (element) {
+    case "from":
+    this.fromDate = date;
+    break;
+    case "to":
+    this.toDate = date;
+    break;
+    default:
+    // code...
+    break;
+  }
+  this.requestChartBtn=(this.fromDate && this.toDate && this.toDate.after(this.fromDate))?false:true;
+}
+isHovered(date: NgbDate) {
+  return this.fromDate && !this.toDate && this.hoveredDate && date.after(this.fromDate) && date.before(this.hoveredDate);
+}
+isInside(date: NgbDate) {
+  return date.after(this.fromDate) && date.before(this.toDate);
+}
+isRange(date: NgbDate) {
+  return date.equals(this.fromDate) || date.equals(this.toDate) || this.isInside(date) || this.isHovered(date);
+}
+validateInput(currentValue: NgbDate, input: string): NgbDate {
+  const parsed = this.formatter.parse(input);
+  return parsed && this.calendar.isValid(NgbDate.from(parsed)) ? NgbDate.from(parsed) : currentValue;
 }
 //por factorizar  
 renderMap() {
