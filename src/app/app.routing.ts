@@ -19,7 +19,7 @@ const routes: Routes =[
 			loadChildren: './layouts/admin-layout/admin-layout.module#AdminLayoutModule'
 		}]
 	},
-	{ path: 'login', component: LoginComponenta }
+	{ path: 'login', component: LoginComponent }
 ];
 
 @NgModule({
