@@ -9,7 +9,7 @@ import { LoginComponent } from './login/login.component';
 const routes: Routes =[
 	{
 		path: '',
-		redirectTo: 'login',
+		redirectTo: 'logind',
 		pathMatch: 'full',
 	}, {
 		path: '',
@@ -19,7 +19,7 @@ const routes: Routes =[
 			loadChildren: './layouts/admin-layout/admin-layout.module#AdminLayoutModule'
 		}]
 	},
-	{ path: 'login', component: LoginComponent }
+	{ path: 'logind', component: LoginComponent }
 ];
 
 @NgModule({
