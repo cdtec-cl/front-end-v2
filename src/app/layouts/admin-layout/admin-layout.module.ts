@@ -12,6 +12,7 @@ import {MatSlideToggleModule} from '@angular/material/slide-toggle';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { SelectDropDownModule } from "ngx-select-dropdown";
 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
@@ -28,6 +29,8 @@ import { FarmClientComponent } from 'app/farm-client/farm-client.component';
 import { FarmMapPolygonComponent } from 'app/farm-map-polygon/farm-map-polygon.component';
 
 import { DashboardComponent } from '../../dashboard/dashboard.component';
+import { UsersComponent } from '../../users/users.component';
+import { UserFormComponent } from '../../user-form/user-form.component';
 import { AdminDashboardComponent } from '../../admin-dashboard/admin-dashboard.component';
 import { FarmMapComponent } from '../../farm-map/farm-map.component';
 import { WeatherMonitoringComponent } from '../../weather-monitoring/weather-monitoring.component';
@@ -45,9 +48,13 @@ import { AdminLayoutRoutes } from './admin-layout.routing';
 import { FreePlotterComponent } from 'app/free-plotter/free-plotter.component';
 import { SoilAnalysisComponent } from 'app/soil-analysis/soil-analysis.component';
 
+//componentes de uso compartido
+import { PolygonMapComponent } from 'app/components/polygon-map/polygon-map.component';
+
 @NgModule({
   imports: [
     CommonModule,
+    SelectDropDownModule,
     RouterModule.forChild(AdminLayoutRoutes),
     FormsModule,
     ReactiveFormsModule,
@@ -67,6 +74,8 @@ import { SoilAnalysisComponent } from 'app/soil-analysis/soil-analysis.component
   ],
   declarations: [
     DashboardComponent,
+    UsersComponent,
+    UserFormComponent,
     AdminDashboardComponent,
     WeatherMonitoringComponent,
     UserProfileComponent,
@@ -87,6 +96,7 @@ import { SoilAnalysisComponent } from 'app/soil-analysis/soil-analysis.component
     DialogMessage,
     ReportInstalationComponent,
     ConfigurationComponent,
+    PolygonMapComponent
   ],
   entryComponents:[
     DialogMessage

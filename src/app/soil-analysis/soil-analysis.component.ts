@@ -16,18 +16,19 @@ export class SoilAnalysisComponent implements OnInit {
 
   ngOnInit() {
     this.loading = true;
-  	if(this.wiseconnService.farmId){
-  		this.getFarm(this.wiseconnService.farmId);
+  	if(localStorage.getItem("lastFarmId")){
+  		this.getFarm(parseInt(localStorage.getItem("lastFarmId")));
   	}else{
       this.loading = false;
   		Swal.fire({
 	         icon: 'error',
 	         title: 'Oops...',
-	         text: 'Debe estar seleccionado un campo.'
+	         text: 'Debe estar seleccionado un campo. En la seccion de cuenta-> nombre de cuenta-> Seleccionar el campo'
 	    });
   	}
   }
   getFarm(id:number){
+    this.loading = true;
   	this.wiseconnService.getFarm(id).subscribe((response) => {
     this.loading = false;
       this.farm = response.data?response.data:response;

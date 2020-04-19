@@ -34,19 +34,14 @@
 <div class="main-content">
   <div class="container-fluid">
     <div class="row">
-      <h4 class="row-title">Dashboard</h4>
+      <h4 class="row-title">Monitoreo del Clima</h4>
     </div>
     <div class="row">
       <div class="col-md-6">
         <div class="form-group row">
-          <label for="farm" class="col-sm-2 col-form-label">Campo</label>
+          <label for="" class="col-sm-2 col-form-label" >Campo</label>
           <div class="col-sm-10">
-            <mat-form-field class="mat-select-custom" floatLabel="never" id="farm">
-              <mat-label>{{farm?farm.name:'Campo'}}</mat-label>
-              <mat-select>
-                <mat-option *ngFor="let farm of farms" (click)="onSelect('farm',farm.id)">{{farm.name}}</mat-option>
-              </mat-select>
-            </mat-form-field>
+            <label for="" class="col-sm-2 col-form-label" *ngIf="user">{{farm?farm.name:'Campo Seleccionado'}}</label>
           </div>
         </div>
       </div>
@@ -94,29 +89,29 @@
                   <tbody>
                     <tr *ngFor="let data of measurements">
                       <td class="name-weather">
-                        {{data.name}}
+                        {{translateMeasurement(data.name)}}
                       </td>
                       <td class="icon-weather">
-                        <img *ngIf="data.name =='Station Temperature' || data.name=='Temperatura'"
-                          src="assets/icons/Temperatura.svg">
-                        <img *ngIf="data.name =='Rafaga de viento' || data.name=='Dir. Viento'"
-                          src="assets/icons/Direccion-del-Viento.svg">
-                        <img *ngIf="data.name =='Wind Direction' || data.name=='Vel. Viento'" src="assets/icons/Viento.svg">
-                        <img *ngIf="data.name =='Wind Speed (period)'"
-                          src="https://www.dropcontrol.com/img/widgets/ico_velocidad.gif">
-                        <img *ngIf="data.name =='Station Relative Humidity' || data.name=='Humedad'"
-                          src="assets/icons/Gota.svg">
-                        <img *ngIf="data.name =='Solar radiation ' || data.name=='Rad. Solar'" src="assets/icons/Sol.svg">
-                        <img *ngIf="data.name =='Horas Frío'"
-                          src=" https://www.dropcontrol.com/img/widgets/ico_pluviometria.gif?uv=1">
-                        <img *ngIf="data.name =='Porciones de Frío'"
-                          src=" https://www.dropcontrol.com/img/widgets/ico_pluviometria.gif?uv=1">
-                        <img *ngIf="data.name =='Pluviometro'" src="assets/icons/Lluvia.svg">
+                        <img *ngIf="translateMeasurement(data.name) =='Station Temperature' || translateMeasurement(data.name)=='Temperatura'"
+                                  src="assets/icons/Temperatura.svg">
+                        <img *ngIf="translateMeasurement(data.name) =='Rafaga de viento' || translateMeasurement(data.name)=='Dir. Viento'"
+                                  src="assets/icons/Direccion-del-Viento.svg">
+                        <img *ngIf="translateMeasurement(data.name) =='Wind Direction' || translateMeasurement(data.name)=='Vel. Viento'" src="assets/icons/Viento.svg">
+                        <img *ngIf="translateMeasurement(data.name) =='Wind Speed (period)'"
+                                  src="https://www.dropcontrol.com/img/widgets/ico_velocidad.gif">
+                        <img *ngIf="translateMeasurement(data.name) =='Station Relative Humidity' || translateMeasurement(data.name)=='Humedad'"
+                                  src="assets/icons/Gota.svg">
+                        <img *ngIf="translateMeasurement(data.name) =='Solar radiation ' || translateMeasurement(data.name)=='Rad. Solar'" src="assets/icons/Sol.svg">
+                        <img *ngIf="translateMeasurement(data.name) =='Horas Frío'"
+                                  src=" https://www.dropcontrol.com/img/widgets/ico_pluviometria.gif?uv=1">
+                        <img *ngIf="translateMeasurement(data.name) =='Porciones de Frío'"
+                                  src=" https://www.dropcontrol.com/img/widgets/ico_pluviometria.gif?uv=1">
+                        <img *ngIf="translateMeasurement(data.name) =='Pluviometro'" src="assets/icons/Lluvia.svg">
                       </td>
-                      <td>
-                        {{data.lastData}} {{data.unit}}
+                      <td style="display:inline-flex;">
+                        {{decimalProcessor(data.lastData)}} {{data.unit}} &nbsp;  
+                        <div *ngIf="translateMeasurement(data.name) =='Rafaga de viento' || translateMeasurement(data.name)=='Dir. Viento'"> {{getCardinalPointOfTheValue(data.lastData)}}</div>
                       </td>
-
                     </tr>
                   </tbody>
                 </table>
@@ -127,10 +122,7 @@
         <!-- Fin de Cuadro de Clima -->
       </div>
       <div class="col-lg-8 col-md-8 col-sm-8">
-        <!-- <div #mapRef id="map-container" style="width:100%;height:100%"></div> -->
-        
-        <div #mapRef id="map-container" class="map"></div>
-        <!-- <iframe [src]="url | safePipe" frameborder="0" allowFullScreen="true"></iframe>       -->
+        <app-polygon-map [zones]="weatherZones" [showCustomControl]="true"></app-polygon-map>
         <div class="row">
           <div class="col-md-6">
             <div class="row">
@@ -158,13 +150,13 @@
               </div>
             </div>
           </div>
-          <div class="col-md-6 irrimax-label">
+          <!-- <div class="col-md-6 irrimax-label">
             <h6 style="margin-top: 5%;">Ver analisis de suelo en</h6>
             <div (click)="open(content, 'xl')" class="btn btns-irrimax btn-radius">
                 <span>Irrimax<b>LIVE</b></span>
                 <span><img src="/assets/icons/IrrimaxLive.png"></span>
             </div>
-          </div>
+          </div> -->
           
         </div>
 
@@ -238,93 +230,61 @@
         <div class="container-fluid">
           <div class="row">
             <div class="col-md-12">
-            <div class="select-time">
-              <h4>Selector de tiempo</h4>
-              <form class="form-inline form-date-range line">
-                <div class="w-20">
-                 
-                <div class="form-group ">
-                  <h6>*Fecha de Inicio</h6>
-                  <div class="input-group">
-                    <input #dpFromDate
-                    class="input-calendar" 
-                    name="dpFromDate"
-                    [value]="formatter.format(fromDate)"
-                    (input)="fromDate = validateInput(fromDate, dpFromDate.value)">
-                    <div class="input-group-append">
-                      <button class="icon-calendar" (click)="datepickerFrom.toggle()" type="button">
-                        <img src="assets/icons/Calendar.svg" style="height: 25px">
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                 
-                </div>
-                <div class="w-20">
-                  
-                  <div class="form-group">
-                    <h6>*Fecha Final</h6> 
+              <div class="select-time">
+                <h4>Selector de tiempo</h4>
+                <form class="form-inline form-date-range line">
+                  <div class="w-20">                 
+                  <div class="form-group ">
+                    <h6>*Fecha de Inicio</h6>
                     <div class="input-group">
-                      <input #dpToDate
-                      class="input-calendar"  
-                      name="dpToDate"
-                      [value]="formatter.format(toDate)"
-                      (input)="toDate = validateInput(toDate, dpToDate.value)">
+                      <input #dpFromDate
+                      class="input-calendar" 
+                      name="dpFromDate"
+                      [value]="formatter.format(fromDate)"
+                      (input)="fromDate = validateInput(fromDate, dpFromDate.value)">
                       <div class="input-group-append">
-                        <button class="icon-calendar"  (click)="datepickerTo.toggle()" type="button">
+                        <button class="icon-calendar" (click)="datepickerFrom.toggle()" type="button">
                           <img src="assets/icons/Calendar.svg" style="height: 25px">
                         </button>
                       </div>
                     </div>
+                  </div>                 
                   </div>
-                  
-                </div>
-                <div class="w-10">
-                  <div class="form-inline">
-                    <button class="btn-greem" [disabled]="requestChartBtn" (click)="getChartInformation()">Ver</button>
+                  <div class="w-20">                  
+                    <div class="form-group">
+                      <h6>*Fecha Final</h6> 
+                      <div class="input-group">
+                        <input #dpToDate
+                        class="input-calendar"  
+                        name="dpToDate"
+                        [value]="formatter.format(toDate)"
+                        (input)="toDate = validateInput(toDate, dpToDate.value)">
+                        <div class="input-group-append">
+                          <button class="icon-calendar"  (click)="datepickerTo.toggle()" type="button">
+                            <img src="assets/icons/Calendar.svg" style="height: 25px">
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
                   </div>
-                </div>
-                <div class="w-50">
-                  <div class="form-group hidden">
-                  <div class="input-group">
-                    <input name="datepickerFrom"
-                    style="
-                    background-color: transparent;
-                    border: none;
-                    visibility: hidden;"
-                    ngbDatepicker
-                    #datepickerFrom="ngbDatepicker"
-                    [autoClose]="'outside'"
-                    (dateSelect)="onDateSelection($event,'from')"
-                    [displayMonths]="1"
-                    [dayTemplate]="t"
-                    outsideDays="hidden"
-                    [startDate]="fromDate">
-                    <ng-template #t let-date let-focused="focused">
-                        <span class="custom-day"
-                        [class.focused]="focused"
-                        [class.range]="isRange(date)"
-                        [class.faded]="isHovered(date) || isInside(date)"
-                        (mouseenter)="hoveredDate = date"
-                        (mouseleave)="hoveredDate = null">
-                        {{ date.day }}
-                      </span>
-                    </ng-template>
+                  <div class="w-10">
+                    <div class="form-inline">
+                      <button class="btn-greem" [disabled]="requestChartBtn" (click)="getChartInformation()">Ver</button>
+                    </div>
                   </div>
-                </div>
-                </div>
-                <div class="w-50">
-                  <div class="form-group hidden">
+                  <div class="w-50">
+                    <div class="form-group hidden">
                     <div class="input-group">
-                      <input name="datepickerTo"
+                      <input name="datepickerFrom"
                       style="
                       background-color: transparent;
                       border: none;
                       visibility: hidden;"
                       ngbDatepicker
-                      #datepickerTo="ngbDatepicker"
+                      #datepickerFrom="ngbDatepicker"
                       [autoClose]="'outside'"
-                      (dateSelect)="onDateSelection($event,'to')"
+                      (dateSelect)="onDateSelection($event,'from')"
                       [displayMonths]="1"
                       [dayTemplate]="t"
                       outsideDays="hidden"
@@ -341,15 +301,56 @@
                       </ng-template>
                     </div>
                   </div>
+                  </div>
+                  <div class="w-50">
+                    <div class="form-group hidden">
+                      <div class="input-group">
+                        <input name="datepickerTo"
+                        style="
+                        background-color: transparent;
+                        border: none;
+                        visibility: hidden;"
+                        ngbDatepicker
+                        #datepickerTo="ngbDatepicker"
+                        [autoClose]="'outside'"
+                        (dateSelect)="onDateSelection($event,'to')"
+                        [displayMonths]="1"
+                        [dayTemplate]="t"
+                        outsideDays="hidden"
+                        [startDate]="fromDate">
+                        <ng-template #t let-date let-focused="focused">
+                            <span class="custom-day"
+                            [class.focused]="focused"
+                            [class.range]="isRange(date)"
+                            [class.faded]="isHovered(date) || isInside(date)"
+                            (mouseenter)="hoveredDate = date"
+                            (mouseleave)="hoveredDate = null">
+                            {{ date.day }}
+                          </span>
+                        </ng-template>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+            <div class="col-md-12">
+              <div class="line">
+                <div class="buttons-time row">
+                  <div >
+                    <button class="volver" (click)="goBack()" [disabled]="dateRangeHistory.length==1">Volver</button>
+                  </div>
+                  <div *ngFor="let data of times">
+                    <button [ngClass]="{'times-active': data.value === selectedValue}" (click)="selectTime(data)"  class="times">{{data.value}}</button>
+                  </div>
                 </div>
-              </form>
-            </div>
-          </div>
-            <div class="col-md-12">
-              <div #lineChart></div>
-            </div>
-            <div class="col-md-12">
-              <div #barChart></div>
+              </div>
+              <div class="container-fluid top">
+                <div #lineChart></div>
+              </div>
+              <div class="container-fluid top">
+                <div #barChart></div>
+              </div>
             </div>
           </div>
         </div>

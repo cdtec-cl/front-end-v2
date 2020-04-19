@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { WiseconnService } from 'app/services/wiseconn.service';
+import { UserService } from 'app/services/user.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import * as bcrypt from 'bcryptjs';
 
 @Component({
   selector: 'app-client',
@@ -7,26 +10,47 @@ import { WiseconnService } from 'app/services/wiseconn.service';
   styleUrls: ['./client.component.scss']
 })
 export class ClientComponent implements OnInit {
-  farms: any = [];
-  client: any = [];
+  public accounts:any[]=[];
   public loading = false;
-  constructor(private wiseconnService: WiseconnService) { }
-  searchTable:any;
+  public searchTable:any;
+  public userLS:any=null;
+  public user:any=null;
+  constructor(
+    private wiseconnService: WiseconnService,
+    private userService:UserService,
+    private router: Router) { }
   
   ngOnInit() {
-    this.loading=true;
-    this.wiseconnService.getFarms().subscribe((response: any) => {
-      this.farms = response.data?response.data:response;
-      this.client=this.farms.filter(function(item,index,array){ 
-        if(index == 0){
-          return true;
-        }else{ 
-          return item['account']['id'] == array[--index]['account']['id']? false: true;
+    if(localStorage.getItem("user")){
+      this.userLS=JSON.parse(localStorage.getItem("user"));
+      if(bcrypt.compareSync(this.userLS.plain, this.userLS.hash)){
+        this.user=JSON.parse(this.userLS.plain);
+        if(this.user.role.id==1){//admin
+          this.getAccounts();
+        }else{
+          this.getAccountsByUser();
         }
-      });
-      console.log("this.farms:",this.farms)
-      console.log("this.client:",this.client)
+      }else{
+        this.router.navigate(['/login']);
+      }
+    }else{
+      this.router.navigate(['/login']);
+    }
+
+    
+  }
+  getAccounts(){
+    this.loading=true;
+    this.wiseconnService.getAccounts().subscribe((response: any) => {
       this.loading=false;
+      this.accounts = response.data?response.data:response;
+    })
+  }
+  getAccountsByUser(){
+    this.loading=true;
+    this.userService.getAccountsByUser(this.user.id).subscribe((response: any) => {
+      this.loading=false;
+      this.accounts = response.data?response.data:response;
     })
   }
 

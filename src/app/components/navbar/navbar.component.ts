@@ -1,8 +1,7 @@
-import { Component, OnInit, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import {Location, LocationStrategy, PathLocationStrategy} from '@angular/common';
 import { Router } from '@angular/router';
-
-
+import * as bcrypt from 'bcryptjs';
 
 declare interface RouteInfo {
     path: string;
@@ -22,13 +21,16 @@ export const SidebarRoute: RouteInfo[] = [
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent implements OnInit {
+  @ViewChild('toggleButton', {static: true }) toggleButton: ElementRef;
+    public toggled:boolean=null;
     private listTitles: any[];
-    location: Location;
-      mobile_menu_visible: any = 0;
-    private toggleButton: any;
+    public location: Location;
+    public mobile_menu_visible: any = 0;
     private sidebarVisible: boolean;
-    public username:string=null;
-    activeHover = false;
+    public activeHover = false;
+    public userLS:any=null;
+    public user:any=null;
+
 
     constructor(location: Location,  private element: ElementRef, private router: Router) {
       this.location = location;
@@ -36,52 +38,35 @@ export class NavbarComponent implements OnInit {
     }
 
     ngOnInit(){
-      //this.username=localStorage.getItem("username");
-      if(localStorage.getItem("username")){
-        switch (localStorage.getItem("username").toLowerCase()) {
-          case "agrifrut":
-              this.username="Agrifrut";
-            break;
-            case "agrifrut@cdtec.cl":
-              this.username="Agrifrut";
-            break;
-          case "santajuana":
-              this.username="SantaJuana";
-            break;  
-            case "santajuana@cdtec.cl":
-              this.username="SantaJuana";
-              break;      
-          default:
-              this.username="Admin";
-            break;
+      if(localStorage.getItem("user")){
+        this.userLS=JSON.parse(localStorage.getItem("user"));
+        if(bcrypt.compareSync(this.userLS.plain, this.userLS.hash)){
+          this.user=JSON.parse(this.userLS.plain);
+          this.listTitles = SidebarRoute.filter(listTitle => listTitle);
+          const navbar: HTMLElement = this.element.nativeElement;
+          this.toggled=this.isMobileMenu()?false:true;
+          this.router.events.subscribe((event) => {
+            this.sidebarClose();
+            var $layer = document.getElementsByClassName('close-layer')[0];
+            if ($layer) {
+              $layer.remove();
+              this.mobile_menu_visible = 0;
+            }
+          });
+        }else{
+          this.router.navigate(['/login']);
         }
       }else{
         this.router.navigate(['/login']);
       }
-      this.listTitles = SidebarRoute.filter(listTitle => listTitle);
-      const navbar: HTMLElement = this.element.nativeElement;
-      this.toggleButton = navbar.getElementsByClassName('navbar-toggler')[0];
-      this.router.events.subscribe((event) => {
-        this.sidebarClose();
-         var $layer = document.getElementsByClassName('close-layer')[0];
-         if ($layer) {
-           $layer.remove();
-           this.mobile_menu_visible = 0;
-         }
-     });
+      
     }
 
-    sidebarOpen() {      
-        const toggleButton = this.toggleButton;
+    sidebarOpen() {
+        const toggleButton=this.toggleButton;
         const body = document.getElementsByTagName('body')[0];
         const sidebar = document.getElementsByClassName('sidebar')[0];
         const mainPanel = document.getElementsByClassName('main-panel')[0];
-        console.log("sidebar:",sidebar)
-
-        setTimeout(function(){
-            toggleButton.classList.add('toggled');
-        }, 500);
-
         body.classList.add('nav-open');
 
         sidebar.classList.add('sidebar-close');
@@ -90,8 +75,6 @@ export class NavbarComponent implements OnInit {
     };
     sidebarClose() {
         const body = document.getElementsByTagName('body')[0];
-        this.toggleButton.classList.remove('toggled');
-
         body.classList.remove('nav-open');
 
         const sidebar: any = document.getElementsByClassName('sidebar sidebar-close')[0];
@@ -105,6 +88,7 @@ export class NavbarComponent implements OnInit {
         }
     };
     sidebarToggle() {
+        this.toggled=!this.toggled;
         // const toggleButton = this.toggleButton;
         // const body = document.getElementsByTagName('body')[0];
         var $toggle = document.getElementsByClassName('navbar-toggler')[0];
@@ -125,15 +109,15 @@ export class NavbarComponent implements OnInit {
             if ($layer) {
                 $layer.remove();
             }
-            setTimeout(function() {
+            /*setTimeout(function() {
                 $toggle.classList.remove('toggled');
-            }, 400);
+            }, 400);*/
 
             this.mobile_menu_visible = 0;
         } else {
-            setTimeout(function() {
+            /*setTimeout(function() {
                 $toggle.classList.add('toggled');
-            }, 430);
+            }, 430);*/
 
             var $layer: any = document.createElement('div');
             $layer.setAttribute('class', 'close-layer');
@@ -153,9 +137,9 @@ export class NavbarComponent implements OnInit {
               body.classList.remove('nav-open');
               this.mobile_menu_visible = 0;
               $layer.classList.remove('visible');
+              this.toggled=!this.toggled;
               setTimeout(function() {
                   $layer.remove();
-                  $toggle.classList.remove('toggled');
               }, 400);
             }.bind(this);
 
@@ -164,7 +148,12 @@ export class NavbarComponent implements OnInit {
 
         }
     };
-
+    isMobileMenu() {
+        if ($(window).width() > 991) {
+            return false;
+        }
+        return true;
+    };
     getTitle(){
       var titlee = this.location.prepareExternalUrl(this.location.path());
       if(titlee.charAt(0) === '#'){

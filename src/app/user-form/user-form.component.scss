@@ -1,4 +1,4 @@
-.user-profile {
+.user-from {
   .icon-title {
     width: 18px;
     height: 18px;
@@ -40,11 +40,13 @@
     }
   }
 }
-
+.mat-input-element.mat-form-field-autofill-control {
+  color: #000000 !important;
+}
 ::ng-deep {
-  .user-profile .mat-select-custom {
+  .user-from .mat-select-custom {
     .mat-form-field-flex {
-      background-color: white;
+      background-color: rgb(10, 10, 10);
       border: 1px solid silver;
       border-radius: 5px;
     }
@@ -69,13 +71,13 @@
     }
   }
 
-  .user-profile .mat-select-custom mat-label {
+  .user-from .mat-select-custom mat-label {
     font-weight: 500;
-    color: #bfbfbf;
+    color: #000000;
     text-transform: uppercase;
   }
 
-  .user-profile .mat-input-custom {
+  .user-from .mat-input-custom {
     .mat-form-field-flex {
       border: 1px solid silver;
       border-radius: 5px;
@@ -85,10 +87,9 @@
       display: none;
     }
   }
+  
 }
-.mat-input-element.mat-form-field-autofill-control {
-  color: #000000 !important;
-}
+
 .btn-green {
   background-color: #6fb060;
   color: white;

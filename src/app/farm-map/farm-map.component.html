@@ -34,14 +34,15 @@
 <div class="main-content">
   <div class="container-fluid">
     <div class="row">
-      <h4 class="row-title">Dashboard</h4>
+      <h4 class="row-title">Monitoreo del Clima</h4>
     </div>
     <div class="row">
       <div class="col-md-6">
         <div class="form-group row">
-          <label for="farm" class="col-sm-2 col-form-label">Campo</label>
+          <label for="" class="col-sm-2 col-form-label" >Campo</label>
           <div class="col-sm-10">
-            <mat-form-field class="mat-select-custom" floatLabel="never" id="farm">
+            <label for="" class="col-sm-2 col-form-label" *ngIf="user && user.role.id==1">{{farm?farm.name:'Campo Seleccionado'}}</label>
+            <mat-form-field class="mat-select-custom" floatLabel="never" id="farm" *ngIf="user.role.id!=1">
               <mat-label>{{farm?farm.name:'Campo'}}</mat-label>
               <mat-select>
                 <mat-option *ngFor="let farm of farms" (click)="onSelect('farm',farm.id)">{{farm.name}}</mat-option>
@@ -52,11 +53,6 @@
       </div>
     </div>
     <div class="row justify-content-end labels-row">
-      <!-- <div class="col-md-4">
-        <div>
-          <span class="date-title">{{today | date:'MMMM dd/MM/yyyy'}} </span>
-        </div>
-      </div> -->
       <div class="col-md-8">
         <span *ngIf="farm" class="title-farm">{{farm.name}}</span>
       </div>
@@ -80,146 +76,152 @@
               <span>Alertas</span>
             </div>
         </div> 
-        <div *ngIf="measurements" class="container-fluid card-weather">
-          <div class="row ">
-            <h4 class="row-subtitle">Clima</h4>
-          </div>
-          <div class="card-body ">
-            <div class="table-responsive">
-              <table class="table">
-                <tbody>
-                  <tr *ngFor="let data of measurements">
+        <div *ngIf="measurements.length>0" class="container-fluid card-weather">
+          <div class="card card-bg-none">
+            <div class="card-header py-0">
+              <h4 class="row-subtitle-card">Clima</h4>
+            </div>
+            <div class="card-body ">
+              <div class="table-responsive">
+                <table class="table">
+                  <tbody>
+                    <tr *ngFor="let data of measurements">
                     <td class="name-weather">
-                      {{data.name}}
+                      {{translateMeasurement(data.name)}}
                     </td>
                     <td class="icon-weather">
-                      <img *ngIf="data.name =='Station Temperature' || data.name=='Temperatura'"
+                      <img *ngIf="translateMeasurement(data.name) =='Station Temperature' || translateMeasurement(data.name)=='Temperatura'"
                                 src="assets/icons/Temperatura.svg">
-                      <img *ngIf="data.name =='Rafaga de viento' || data.name=='Dir. Viento'"
+                      <img *ngIf="translateMeasurement(data.name) =='Rafaga de viento' || translateMeasurement(data.name)=='Dir. Viento'"
                                 src="assets/icons/Direccion-del-Viento.svg">
-                      <img *ngIf="data.name =='Wind Direction' || data.name=='Vel. Viento'" src="assets/icons/Viento.svg">
-                      <img *ngIf="data.name =='Wind Speed (period)'"
+                      <img *ngIf="translateMeasurement(data.name) =='Wind Direction' || translateMeasurement(data.name)=='Vel. Viento'" src="assets/icons/Viento.svg">
+                      <img *ngIf="translateMeasurement(data.name) =='Wind Speed (period)'"
                                 src="https://www.dropcontrol.com/img/widgets/ico_velocidad.gif">
-                      <img *ngIf="data.name =='Station Relative Humidity' || data.name=='Humedad'"
+                      <img *ngIf="translateMeasurement(data.name) =='Station Relative Humidity' || translateMeasurement(data.name)=='Humedad'"
                                 src="assets/icons/Gota.svg">
-                      <img *ngIf="data.name =='Solar radiation ' || data.name=='Rad. Solar'" src="assets/icons/Sol.svg">
-                      <img *ngIf="data.name =='Horas Frío'"
+                      <img *ngIf="translateMeasurement(data.name) =='Solar radiation ' || translateMeasurement(data.name)=='Rad. Solar'" src="assets/icons/Sol.svg">
+                      <img *ngIf="translateMeasurement(data.name) =='Horas Frío'"
                                 src=" https://www.dropcontrol.com/img/widgets/ico_pluviometria.gif?uv=1">
-                      <img *ngIf="data.name =='Porciones de Frío'"
+                      <img *ngIf="translateMeasurement(data.name) =='Porciones de Frío'"
                                 src=" https://www.dropcontrol.com/img/widgets/ico_pluviometria.gif?uv=1">
-                      <img *ngIf="data.name =='Pluviometro'" src="assets/icons/Lluvia.svg">
+                      <img *ngIf="translateMeasurement(data.name) =='Pluviometro'" src="assets/icons/Lluvia.svg">
                     </td>
-                    <td>
-                      {{data.lastData}} {{data.unit}}
+                    <td style="display:inline-flex;">
+                      {{decimalProcessor(data.lastData)}} {{data.unit}} &nbsp;  
+                      <div *ngIf="translateMeasurement(data.name) =='Rafaga de viento' || translateMeasurement(data.name)=='Dir. Viento'"> {{getCardinalPointOfTheValue(data.lastData)}}</div>
                     </td> 
           
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="climaLoading" class="container-fluid">
+          <div class="card card-bg-none">
+            <div class="card-header py-0">
+              <h4 class="row-subtitle-card">Pronóstico</h4>
+            </div>
+            <div class="card-body card-pronostic">
+              <table class="table-title">
+                <thead>
+                  <th> <img src="{{climaToday!=undefined?climaToday.weatherIconUrl[0].value:'https://pngimage.net/wp-content/uploads/2018/06/imagen-no-disponible-png-4.png'}} "> </th>
+                  <th *ngIf="climaToday!=undefined"> {{climaToday.temp_C}}°C </th>
+                  <th *ngIf="climaToday==undefined" style="font-size: 10px;"> Información no disponible </th>
+                  <th>
+                    <span>
+                      {{today | date:'dd/MM/yyyy'}}
+                    </span>
+                    <div>
+                      {{farm.name}}
+                    </div>
+                  </th>
+                </thead>
+              </table>
+              <table class="table-body">
+                <thead>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td> </td>
+                    <td *ngFor="let day of climaDay"> {{translateDate(day | date:'EE ')}} </td>
+                  </tr>
+                  <tr>
+                    <td> </td>
+                    <td *ngFor="let icon of climaIcon"><img style="width: 22px; height:22px" src="{{icon}}"></td>
+                  </tr>
+                  <tr>
+                    <td>Máx: </td>
+                    <td *ngFor="let max of climaMax">{{max}}°C </td>
+                  </tr>
+                  <tr>
+                    <td>Min: </td>
+                    <td *ngFor="let min of climaMin">{{min}}°C</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
+          
         </div>
         <div *ngIf="climaLoading" class="container-fluid">
-          <div class="row " style="margin-top: 35px;">
-            <h4 class="row-subtitle-card">Pronóstico</h4>
-          </div>
-          <div class="card-body card-pronostic">
-            <table class="table-title">
-              <thead>
-                <th> <img src="{{climaToday.weatherIconUrl[0].value}} "> </th>
-                <th> {{climaToday.temp_C}}°C </th>
-                <th>
-                  <span>
-                    {{today | date:'dd/MM/yyyy'}}
-                  </span>
-                  <div>
-                    {{farm.name}}
-                  </div>
-                </th>
-              </thead>
-            </table>
-            <table class="table-body">
-              <thead>
-              </thead>
-              <tbody>
-                <tr>
-                  <td> </td>
-                  <td *ngFor="let day of climaDay"> {{translateDate(day | date:'EE ')}} </td>
-                </tr>
-                <tr>
-                  <td> </td>
-                  <td *ngFor="let icon of climaIcon"><img style="width: 22px; height:22px" src="{{icon}}"></td>
-                </tr>
-                <tr>
-                  <td>Máx: </td>
-                  <td *ngFor="let max of climaMax">{{max}}°C </td>
-                </tr>
-                <tr>
-                  <td>Min: </td>
-                  <td *ngFor="let min of climaMin">{{min}}°C</td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="card card-bg-none">
+            <div class="card-header py-0">
+              <h4 class="row-subtitle-card m-0">Ver análisis del suelo</h4>
+            </div>
+            <div class="card-body p-0">
+              <div class="cursor-pointer" (click)="open(content, 'xl')">
+                <img src="../../assets/img/Irrimax-01.png" class="w-100">
+              </div>
+              <img src="../../assets/img/grafica.jpg" class="w-100">
+            </div>
           </div>
         </div>
-        
       </div>
       <div class="col-lg-8 col-md-8 col-sm-8">
-        <!-- <div #mapRef id="map-container" style="width:100%;height:100%"></div> -->
-        
-        <div #mapRef id="map-container" class="map"></div>
-        <!-- <iframe [src]="url | safePipe" frameborder="0" allowFullScreen="true"></iframe>       -->
-        <div class="row">
-          <div class="col-md-6">
-            <div class="row">
-              <div class="col-lg-6 col-md-6 col-sm-6">
-                <table class="table-legent">
-                  <thead>
-                    <th *ngIf="statusRegando">
-                      <div class="square-temp" style=" background-color: #419FD5;"></div>
-                      <span style="color: black; font-size: 10px; margin-left: 10px;">Regando</span>
-                    </th>
-                    <th>
-                      <div class="square-temp" style=" background-color: #49AA4F;"></div>
-                      <span style="color: black; font-size: 10px; margin-left: 10px;">Ok</span>
-                    </th>
-                    <th *ngIf="status">
-                      <div class="square-temp" style=" background-color: rgb(233, 58, 189);"></div>
-                      <span style="color: black; font-size: 10px; margin-left: 10px;">Estresado</span>
-                    </th>
-                    <th *ngIf="status">
-                      <div class="square-temp" style="background-color: red;"></div>
-                      <span style="color: black; font-size: 10px; margin-left: 10px;">Seco</span>
-                    </th>
-                  </thead>
+        <div>
+          <div class="row">
+            <div class="col-md-12">
+              <app-polygon-map [zones]="zones" [showCustomControl]="true"></app-polygon-map>
+            </div>
+            <div class="col-md-12">
+              <div class="p-2">              
+                <table class="table6">
+                  <tr>
+                    <td *ngIf="statusRegando" class="light lightblue"> <td>
+                    <td *ngIf="statusRegando"> Regando </td>
+                    <td class="light lightgreen"> <td>
+                    <td> Ok </td>
+                    <td *ngIf="status" class="light lighttree"> <td>
+                    <td *ngIf="status"> Estresado </td>
+                    <td *ngIf="status" class="light lightred"> <td>
+                    <td *ngIf="status"> Seco </td>
+                  </tr>
                 </table>
               </div>
             </div>
-          </div>
-          <!-- <div class="col-md-6 irrimax-label">
-            <h6 style="margin-top: 5%;">Ver analisis de suelo en</h6>
-            <div (click)="open(content, 'xl')" class="btn btns-irrimax btn-radius">
-                <span>Irrimax<b>LIVE</b></span>
-                <span><img src="/assets/icons/IrrimaxLive.png"></span>
+            <div class="col-md-12">
+              <div class="line">
+                <div class="buttons-time row">
+                  <div >
+                    <button class="volver" (click)="goBack()" [disabled]="dateRangeHistory.length==1">Volver</button>
+                  </div>
+                  <div *ngFor="let data of times">
+                    <button [ngClass]="{'times-active': data.value === selectedValue}" (click)="selectTime(data)"  class="times">{{data.value}}</button>
+                  </div>
+                </div>
+              </div>
+              <div class="container-fluid top">
+                <div #lineChart></div>
+              </div>
+              <div class="container-fluid top">
+                <div #barChart></div>
+              </div>
             </div>
-          </div> -->
-        </div>
-
-      </div>
-    </div>
-  </div>
-  <!-- <div class="container-fluid">
-    <ngx-loading [show]="loading" [config]="{ backdropBorderRadius: '3px' }"></ngx-loading>
-  </div>
-  <div class="container-fluid">
-    <div class="row">
-      <div class="row">
-        <div class="col-lg-12 col-md-12 col-sm-12">
-          <div #mapRef id="map-container" style="width:100%;height:50%">
           </div>
         </div>
       </div>
     </div>
-  </div> -->
-  
+  </div> 
 </div>
