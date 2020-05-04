@@ -8,6 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 //services
 import { WiseconnService } from 'app/services/wiseconn.service';
+import { NotificationService } from 'app/services/notification.service';
 import { UserService } from 'app/services/user.service';
 
 @Component({
@@ -20,16 +21,16 @@ export class AdminDashboardComponent implements OnInit {
   //@italo
   @ViewChild('mapRef', {static: true }) mapElement: ElementRef;
 
-  public farms: any = [];
   public loading = false;
-  public cant_farms=0;
-  public users = 0;
+  public accounts:any=[];
+  public farms:any=[];
   public lat = -32.9034219818308;
   public lng = -70.9091198444366;
   public userLS:any=null;
   public user:any=null;
   constructor(
     private _route: ActivatedRoute, 
+    private notificationService:NotificationService,
     private wiseconnService: WiseconnService,
     private userService:UserService,
     private router: Router) { }  
@@ -138,8 +139,10 @@ export class AdminDashboardComponent implements OnInit {
         this.user=JSON.parse(this.userLS.plain);
         if(this.user.role.id==1){//admin
           this.getFarms();
+          this.getAccounts();
         }else{
           this.getFarmsByUser();
+          this.getAccountsByUser();
         }
       }else{
         this.router.navigate(['/login']);
@@ -229,6 +232,20 @@ export class AdminDashboardComponent implements OnInit {
       //start animation for the Emails Subscription Chart
       // this.startAnimationForBarChart(websiteViewsChart);
   }
+    getAccounts(){
+      this.loading=true;
+      this.wiseconnService.getAccounts().subscribe((response: any) => {
+        this.loading=false;
+        this.accounts = response.data?response.data:response;
+      })
+    }
+    getAccountsByUser(){
+      this.loading=true;
+      this.userService.getAccountsByUser(this.user.id).subscribe((response: any) => {
+        this.loading=false;
+        this.accounts = response.data?response.data:response;
+      })
+    }
 
     getFarmsByUser(){      
         this.loading = true;
@@ -236,16 +253,14 @@ export class AdminDashboardComponent implements OnInit {
           this.loading = false;
           this.farms = response.data?response.data:response;
           localStorage.setItem("datafarms", JSON.stringify(this.farms));
-          this.cant_farms=this.farms.length;
-          var farm_client = this.farms.filter(function(item,index,array){ 
-            if(index == 0){
-              return true;
-            }else{
-              return (item['account']['id'] == array[--index]['account']['id'])? false: true;
-            }
-          });
-          this.users = farm_client.length;
           this.mapInitializer(); 
+        },
+        error=>{
+          console.log("error:",error);
+          this.loading=false;
+          
+          if(error.error)
+          this.notificationService.showError('Error',error.error)
         });
     }
     getFarms(){
@@ -254,16 +269,14 @@ export class AdminDashboardComponent implements OnInit {
         this.loading = false;
         this.farms = response.data?response.data:response;
         localStorage.setItem("datafarms", JSON.stringify(this.farms));
-        this.cant_farms=this.farms.length;
-        var farm_client = this.farms.filter(function(item,index,array){ 
-          if(index == 0){
-            return true;
-          }else{
-            return (item['account']['id'] == array[--index]['account']['id'])? false: true;
-          }
-        });
-        this.users = farm_client.length;
         this.mapInitializer();  
+      },
+      error=>{
+        console.log("error:",error);
+        this.loading=false;
+        
+        if(error.error)
+        this.notificationService.showError('Error',error.error)
       })
     }
 }

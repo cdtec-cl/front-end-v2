@@ -24,6 +24,9 @@ export class PolygonMapComponent implements OnInit,OnChanges {
     public dateRange: any = null;
     public trianglesRef:any[]=[];
   	public statusRegando:boolean=false;
+    public loading:boolean=false;
+    public percentage:number=null;
+    public intPercentage:string='0%';
   	constructor(
       private calendar: NgbCalendar, 
       private wiseconnService: WiseconnService,) { }
@@ -34,7 +37,6 @@ export class PolygonMapComponent implements OnInit,OnChanges {
   	ngOnChanges(changes: SimpleChanges) {
   		const zonesCurrentValue: SimpleChange = changes.zones.currentValue;
   		this.zones=zonesCurrentValue;
-
       if (this.zones.length == 0) {
         var map = new window['google'].maps.Map(this.mapElement.nativeElement, {
           center: { lat: -32.89963602180464, lng: -70.90243510967417 },
@@ -124,35 +126,28 @@ export class PolygonMapComponent implements OnInit,OnChanges {
         if(this.showCustomControl){
           this.addCustomControl(map,this.mapElement);
         }
+        this.intPercentage='100%';
       }else{
         let polygonDatas=[];
-        this.zones.forEach(element => {
+        this.loading=true;
+        let i=0;
+        let zonesWithPaths=this.zones.filter(element=>{
+          if(element.path.length>0){
+            return element;
+          }
+        });
+        for(let element of zonesWithPaths){
           // Construct the polygon.
+          //prueba con wiseconn
+          //wisservice.getIrrigarionsRealOfZones(element.id_wiseconn,this.dateRange).subscribe((response: any) => {
+          //prueba local
           wisservice.getIrrigarionsRealOfZones(element.id,this.dateRange).subscribe((response: any) => {
             let data=response.data?response.data:response;
             let id= element.id_wiseconn?element.id_wiseconn:element.id;
-            if (parseInt(id) == 727 || parseInt(id) == 6054 || parseInt(id) == 13872){
-              let polygonData={
-                paths: element.path?element.path:element.polygon.path,
-                strokeColor: '#E5C720',
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: '#E5C720',
-                fillOpacity: 0.35,
-              };
-              var Triangle = new window['google'].maps.Polygon(polygonData);
-              this.setLocalStorageItem("lastPolygonData",JSON.stringify(polygonDatas));
-              // Marker Image          
-              let marker=this.addMarkerImage(map, element, "https://i.imgur.com/C7gyw7N.png");
-              Triangle.setMap(map);
-              this.addListenersOnPolygon(Triangle, element.id);   
-              polygonDatas.push({element:element,data:polygonData,markerImg:"https://i.imgur.com/C7gyw7N.png"});
-              this.trianglesRef.push({triangle:Triangle,element:element,marker:marker});
-            } else {
-              if (data != "") {
+              if (data.length>0) {
                 let runningElement=data.find(element =>{return element.status == "Running"});
                 if (runningElement==undefined) { //status 'ok'
-                  this.zones.map((zone)=>{
+                  zonesWithPaths.map((zone)=>{
                     if(zone.id==element.id||zone.id_wiseconn==element.id){
                       element.status=data[0].status
                     }
@@ -178,7 +173,7 @@ export class PolygonMapComponent implements OnInit,OnChanges {
                   this.trianglesRef.push({triangle:Triangle,element:element,marker:marker});
                 } else {
                   if(runningElement) { //status 'running'
-                    this.zones.map((zone)=>{
+                    zonesWithPaths.map((zone)=>{
                       if(zone.id==element.id||zone.id_wiseconn==element.id){
                         element.status=runningElement.status
                       }                  
@@ -220,9 +215,18 @@ export class PolygonMapComponent implements OnInit,OnChanges {
                   }
                 }
               }
+            i++;
+            this.percentage=(i/zonesWithPaths.length)*100;
+            this.intPercentage=Math.round(this.percentage)+"%";
+            if(i==zonesWithPaths.length){
+              this.loading=false;
             }
+          },
+          error=>{
+            this.intPercentage="100%";
+            this.loading=false;
           });
-        });
+        }
       }
     
   }
@@ -386,10 +390,10 @@ export class PolygonMapComponent implements OnInit,OnChanges {
     // Create the DIV to hold the control and call the CenterControl()
         // constructor passing in this DIV.
       let trianglesRef=this.trianglesRef;
-       const controls=["General","Weather","Soil Measure", "Irrigation"];
-       for (var control of controls) {
-         var centerControlDiv = document.createElement('div');
-         var centerControl = new this.centerControl(centerControlDiv, map,control, mapElement,trianglesRef);
+      const controls=["General","Clima","Suelo", "Riego"];
+      for (var control of controls) {
+        var centerControlDiv = document.createElement('div');
+        var centerControl = new this.centerControl(centerControlDiv, map,control, mapElement,trianglesRef);
         
          map.controls[window['google'].maps.ControlPosition.LEFT_CENTER].push(centerControlDiv);
        }
@@ -450,7 +454,7 @@ export class PolygonMapComponent implements OnInit,OnChanges {
                         }
                       }
                     break;
-                  case "weather":
+                  case "clima":
                         for (var triangleRef of trianglesRef){
                           if(triangleRef.element.type.find(element=>element.description=="Weather")!=undefined){
                             triangleRef.triangle.setMap(map);
@@ -465,7 +469,7 @@ export class PolygonMapComponent implements OnInit,OnChanges {
                           }
                         }
                     break;
-                  case "soil measure":
+                  case "suelo":
                         for (var triangleRef of trianglesRef){
                           if(triangleRef.element.type.find(element=>element.description=="Soil")!=undefined){
                             triangleRef.triangle.setMap(map);
@@ -480,7 +484,7 @@ export class PolygonMapComponent implements OnInit,OnChanges {
                           }
                         }
                     break;                
-                  case "irrigation":
+                  case "riego":
                     for (var triangleRef of trianglesRef){
                       if(triangleRef.element.type.find(element=>element.description=="Irrigation")!=undefined){
                         triangleRef.triangle.setMap(map);

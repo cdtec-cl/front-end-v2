@@ -7,6 +7,7 @@ import * as bcrypt from 'bcryptjs';
 import * as moment from "moment";
 
 import { WiseconnService } from 'app/services/wiseconn.service';
+import { NotificationService } from 'app/services/notification.service';
 import { UserService } from 'app/services/user.service';
 
 //graficas
@@ -53,12 +54,12 @@ export class FreePlotterComponent implements OnInit {
 
 	    },
 	    colors: [],//dinamic '#D12B34','#00B9EE'
-	    title: {
-	        text: 'Title'
-	    },
-	    subtitle: {
-	        text: 'Subtitle'
-	    },
+	    // title: {
+	    //     text: 'Title'
+	    // },
+	    // subtitle: {
+	    //     text: 'Subtitle'
+	    // },
 	    xAxis: [{
 	        categories: [],
 	        startOnTick: true,
@@ -122,6 +123,7 @@ export class FreePlotterComponent implements OnInit {
 	};
 	constructor(
 		public wiseconnService: WiseconnService,
+    	public notificationService:NotificationService,
     	public userService:UserService,
 		public router: Router,
 		public calendar: NgbCalendar, 
@@ -156,6 +158,13 @@ export class FreePlotterComponent implements OnInit {
 	  	this.userService.getFarmsByUser(this.user.id).subscribe((response: any) => {
 	  	  	this.farms = response.data?response.data:response;      
 	  	  	this.loading = false;
+	  	},
+	  	error=>{
+	  		this.loading = false;
+			
+			if(error.error)
+			this.notificationService.showError('Error',error.error)
+			console.log("error:",error)
 	  	});
 	}
 	getFarms() {
@@ -163,6 +172,13 @@ export class FreePlotterComponent implements OnInit {
 		this.wiseconnService.getFarms().subscribe((response: any) => {			
 			this.loading=false;
 			this.farms = response.data?response.data:response;
+		},
+		error=>{
+			this.loading = false;
+			
+			if(error.error)
+			this.notificationService.showError('Error',error.error)
+			console.log("error:",error)
 		})
 	}
 	getFarm(id){
@@ -186,8 +202,15 @@ export class FreePlotterComponent implements OnInit {
 					if(variableGroup.name==sensorType.group){
 						variableGroup.variable.push({id:sensorType.id,name:sensorType.name})
 					}
-				}				
+				}
 			}			
+		},
+		error=>{
+			this.loading = false;
+			
+			if(error.error)
+			this.notificationService.showError('Error',error.error)
+			console.log("error:",error)
 		});
 	}	
 	sortData(data, type) {
@@ -301,7 +324,7 @@ export class FreePlotterComponent implements OnInit {
 		this.requestChartBtn=(this.fromDate && this.toDate && this.toDate.after(this.fromDate))?false:true;
 		//this.requestDataChart(false);
 	}
-	goBack(){
+	/*goBack(){
 		let lastElement=this.dateRangeHistory.pop();
 		this.fromDate=lastElement.fromDate;
 		this.toDate=lastElement.toDate;
@@ -311,7 +334,7 @@ export class FreePlotterComponent implements OnInit {
 			return element;
 		});
 		this.requestDataChart(true);
-	}
+	}*/
     momentFormat(value:string,chart:string){
       switch (chart) {
         case "line":
@@ -543,7 +566,7 @@ export class FreePlotterComponent implements OnInit {
 					    			this.chartOptions.series.push(serie);
 					    			this.chartOptions.yAxis.push(yAxis);
 					    			this.chartOptions.colors.push(selectGroup.chartColor);
-					    		}					    			
+					    		}
 	    						this.highchartsShow();
 	    						this.loading=false;
 							},
@@ -640,7 +663,13 @@ export class FreePlotterComponent implements OnInit {
 					this.selectGroups[this.selectGroups.length-1].zoneSelected){
 					this.selectGroups.push(this.getDefaultSelectGroups())
 						if(localStorage.getItem("lastFarmId")){
-			          		this.getSensorTypesOfFarm(parseInt(localStorage.getItem("lastFarmId")));
+			          		for (let sensorType of this.sensorTypes) {
+								for (let variableGroup of this.selectGroups[this.selectGroups.length-1].variableGroups) {
+									if(variableGroup.name==sensorType.group){
+										variableGroup.variable.push({id:sensorType.id,name:sensorType.name})
+									}
+								}
+							}
 					    }
 				}else{
 					let message='';

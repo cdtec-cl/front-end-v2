@@ -14,14 +14,6 @@ import { UserService } from 'app/services/user.service';
 import * as bcrypt from 'bcryptjs';
 import * as moment from "moment";
 
-//graficas
-// tslint:disable-next-line:no-var-requires
-const Highcharts = require('highcharts/highstock');
-// tslint:disable-next-line:no-var-requires
-require('highcharts/highmaps');
-require('highcharts/modules/exporting')(Highcharts);
-require('highcharts/modules/solid-gauge')(Highcharts);
-require('highcharts/highcharts-more')(Highcharts);
 
 @Component({
   selector: 'app-weather-monitoring',
@@ -36,19 +28,18 @@ export class WeatherMonitoringComponent implements OnInit {
   public id = 0;
   public url;
   public status=false;
-  public measurements; //mediciones
+  public measurements:any[]=[]; //mediciones
+  public now:any=null
   public statusRegando=false;
   public dialog;
   public today = Date.now();
   public dataFarm: any;
   public zone: any = null;
-  public zones: any[] = [];
   public farm: any=null;
   public farms: any[] = [];
   public weatherStation: any = null;
   public closeResult: string;
   public clima: any;
-
   //rango de fechas para graficas  
   public fromDate: NgbDate;
   public toDate: NgbDate;
@@ -57,130 +48,14 @@ export class WeatherMonitoringComponent implements OnInit {
   public dateRangeHistory:any[]=[]
   public selectedValue: any = '1S';
   public requestChartBtn: boolean =true;
-  //graficas
-  //linechart
-  @ViewChild('lineChart', { static: true }) public lineChartElement: ElementRef;
-  private lineChart;
-  public lineChartData:any[]=[[],[]];
-  public lineChartLabels:any[]=[];
-  public lineChartOptions:any = {
-    chart: {
-      type: 'spline',
-
-    },
-    colors: ['#D12B34','#00B9EE'],
-    title: {
-      text: 'TEMPERATURA/HUMEDAD'
-    },
-    subtitle: {
-      text: 'TEMPERATURA/HUMEDAD'
-    },
-    xAxis: [{
-      categories: [],
-      startOnTick: true,
-      endOnTick: true,
-    }],
-    yAxis: [{ // left y axis
-      title: {
-        text: null
-      },
-      // tickInterval: 5,
-      labels: {
-        format: '{value:.,0f}'
-      },
-      showFirstLabel: false
-    }, { // right y axis
-      opposite: true,
-      tickInterval: 5,
-      labels: {
-        format: '{value:.,0f}'
-      },
-      showFirstLabel: false
-    }],
-    plotOptions: {
-      line: {
-        dataLabels: {
-          enabled: false
-        },
-        enableMouseTracking: true,
-      }
-    },
-    series: [{ 
-      data: [], 
-      name: 'Temperatura',
-      type: 'line',
-      //yAxis: 0 
-    },{ 
-      data: [], 
-      name: 'Humedad',
-      type: 'line', 
-      yAxis: 1 
-    }],
-    tooltip: {
-      shared: true,
-      crosshairs: true
-    },
-  };
-  public temperatureId: number = null;
-  public humidityId: number = null;
-  public renderLineChartFlag: boolean = false;
-  //barchart
-  @ViewChild('barChart', { static: true }) public barChartElement: ElementRef;
-  private barChart;
-  public barChartData:any[]=[[],[]];
-  public barChartLabels:any[]=[];
-  public barChartOptions:any = {
-    chart: {
-      type: 'column'
-    },
-    colors: ['#D12B34','#00B9EE'],
-    title: {
-      text: 'PRECIPITACIÓN/ET0'
-    },
-    subtitle: {
-      text: 'PRECIPITACIÓN/ET0'
-    },
-    xAxis: {
-      categories: [
-      ],
-      crosshair: true
-    },
-    yAxis: {
-      // min: 0,
-      title: {
-        text:'PRECIPITACIÓN/ET0'
-      }
-    },
-    tooltip: {
-      headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-      pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-      '<td style="padding:0"><b>{point.y:.1f}</b></td></tr>',
-      footerFormat: '</table>',
-      shared: true,
-      useHTML: true
-    },
-    plotOptions: {
-      column: {
-        pointPadding: 0.2,
-        borderWidth: 0
-      }
-    },
-    series: [
-    { type: undefined,name: 'Precipitación (mm)', data: [] }, 
-    { type: undefined,name: 'Et0 (mm)', data: [] },
-    ]
-  };
-  public rainId: number = null;
-  public et0Id: number = null;
-  public renderBarChartFlag: boolean = false;
   //times
   public times =[
-    { value: '1D' , active: false},
-    { value: '1S' , active: true},
-    { value: '2S' , active: false},
-    { value: '1M' , active: false},
-    { value: '3M' , active: false},
-    { value: '6M' , active: false},
+  { value: '1D' , active: false},
+  { value: '1S' , active: true},
+  { value: '2S' , active: false},
+  { value: '1M' , active: false},
+  { value: '3M' , active: false},
+  { value: '6M' , active: false},
   ]
   //Pronostico values
   public climaLoading = false;
@@ -196,12 +71,13 @@ export class WeatherMonitoringComponent implements OnInit {
     public userService: UserService,
     public modalService: NgbModal,
     private router: Router,
-    private calendar: NgbCalendar,
+    public calendar: NgbCalendar,
     public formatter: NgbDateParserFormatter,
     private dialogs: MatDialog) {
   }
 
-  ngOnInit() {    
+  ngOnInit() {   
+    this.now=moment().format('L') +" "+ moment().format('LTS');
     this.dateRangeByDefault();
     if(localStorage.getItem("user")){
       this.userLS=JSON.parse(localStorage.getItem("user"));
@@ -224,7 +100,6 @@ export class WeatherMonitoringComponent implements OnInit {
     }else{
       this.router.navigate(['/login']);
     }
-    this.highchartsShow();
   }
   getFarms() {
     this.loading = true;
@@ -271,9 +146,6 @@ export class WeatherMonitoringComponent implements OnInit {
     if(localStorage.getItem('lastWeatherStation')){
       this.weatherStation = JSON.parse(localStorage.getItem('lastWeatherStation'));
       this.getIrrigarionsRealOfWeatherStation();
-      if(this.fromDate && this.toDate){
-        this.getChartInformation();
-      }
       this.getWeather();
     }else{
       this.getWeatherStation();
@@ -288,7 +160,7 @@ export class WeatherMonitoringComponent implements OnInit {
       this.setLocalStorageItem("lastMeasurements",this.getJSONStringify(this.measurements));
     });
   }
-  goBack(){
+  /*goBack(){
     let lastElement=this.dateRangeHistory.pop();
     this.fromDate=lastElement.fromDate;
     this.toDate=lastElement.toDate;
@@ -297,265 +169,85 @@ export class WeatherMonitoringComponent implements OnInit {
       element.active=(element.value===this.selectedValue)?true:false;
       return element;
     });
-    this.getChartInformation(true);
-  }
-  getChartInformation(goBackFlag:boolean=false){
-    this.resetChartsValues("line");
-    this.resetChartsValues("bar");                               
-    if(this.fromDate!=undefined&&this.toDate!=undefined){
-      this.dateRange = {
-        initTime: moment(this.fromDate.year + "-" + this.fromDate.month + "-" + this.fromDate.day).format("YYYY-MM-DD"),
-        endTime: moment(this.toDate.year + "-" + this.toDate.month + "-" + this.toDate.day).format("YYYY-MM-DD")
-      };
-      if(!goBackFlag){          
-        this.dateRangeHistory.push({
-          fromDate:this.fromDate,
-          toDate:this.toDate,
-          selectedValue:this.selectedValue
-        });
-      }
-      let weatherStationFlag=false;
-          this.wiseconnService.getMeasuresOfZones(this.weatherStation.id).subscribe((response) => {
-            let data=response.data?response.data:response;                                      
-            let barFlag=false;
-            let lineFlag=false;
-            let j=0;
-            while (!lineFlag && j < data.length) {
-              //line chart
-              if (data[j].sensorType === "Temperature") {
-                this.temperatureId = data[j].id;
-              }
-              if (data[j].sensorType === "Humidity") {
-                this.humidityId = data[j].id;
-              }
-              if(this.temperatureId&&this.humidityId){
-                    lineFlag=true;
-                    this.wiseconnService.getDataByMeasure(this.temperatureId,this.dateRange).subscribe((response) => {
-                      let temperatureData=response.data?response.data:response;
-                      this.wiseconnService.getDataByMeasure(this.humidityId,this.dateRange).subscribe((response) => {
-                        let humidityData=response.data?response.data:response;
-                        // this.loading = false;
-                        temperatureData=temperatureData.map((element)=>{
-                          element.chart="temperature";
-                          return element
-                        })
-                        humidityData=humidityData.map((element)=>{
-                          element.chart="humidity";
-                          return element
-                        })
-                        let chartData=temperatureData.concat(humidityData);
-                        chartData.sort(function (a, b) {
-                          if (moment(a.time).isAfter(b.time)) {
-                            return 1;
-                          }
-                          if (!moment(a.time).isAfter(b.time)) {
-                            return -1;
-                          }
-                          // a must be equal to b
-                          return 0;
-                        });
-                        chartData = chartData.filter((element) => {
-                          let hour=moment(element.time).hours();
-                          if(hour==0 || hour==2 || hour==4 || hour==6 ||hour==8 || hour==10 || hour==12 || hour==16 || hour==18 || hour==20 || hour==22)
-                            return element;
-                        });
-                        for (var i = 0; i < chartData.length ; i++) {                                
-                          if(chartData[i+1]){
-                            if((chartData[i].chart==="temperature")&&(chartData[i+1].chart==="humidity")){
-                              this.lineChartLabels.push(this.momentFormat(chartData[i].time,"line"));
-                              this.lineChartData[0].push(chartData[i].value);
-                              this.lineChartData[1].push(chartData[i+1].value);
-                            }                                                  
-                          } 
-                        }
-                        this.renderCharts("line");
-                      });
-                    });
-                  }else if(j+1==data.length){
-                    Swal.fire({
-                      icon: 'error',
-                      title: 'Oops...',
-                      text: 'No tiene configurado los sensores de humedad y temperatura'
-                    })
-                  }
-              j++;
-            }
-            j=0;
-            while (!barFlag && j < data.length) {
-              //bar chart
-              if (data[j].sensorType != undefined && data[j].name != undefined){
-                if ((data[j].sensorType).toLowerCase() === "rain" && (data[j].name).toLowerCase() === "pluviometro") {
-                  this.rainId = data[j].id;
-                }
-              }
-              if ((data[j].name) != undefined){
-                if ((data[j].name).toLowerCase() === "et0") {
-                  this.et0Id = data[j].id;
-                }
-              }
-              if(this.rainId&&this.et0Id){
-                barFlag=true;
-                this.wiseconnService.getDataByMeasure(this.rainId,this.dateRange).subscribe((response) => {
-                  let rainData=response.data?response.data:response;
-                  this.wiseconnService.getDataByMeasure(this.et0Id,this.dateRange).subscribe((response) => {
-                    let et0Data=response.data?response.data:response;
-                    this.loading = false;
-                    rainData=rainData.map((element)=>{
-                      element.chart="rain";
-                      return element
-                    })
-                    et0Data=et0Data.map((element)=>{
-                      element.chart="et0";
-                      return element;
-                    })                          
-                    let chartData=rainData.concat(et0Data);
-                    chartData.sort(function (a, b) {
-                      if (moment(a.time).isAfter(b.time)) {
-                        return 1;
-                      }
-                      if (!moment(a.time).isAfter(b.time)) {
-                        return -1;
-                      }
-                      return 0;
-                    });
-                    chartData=chartData.filter((element)=>{
-                      if(moment.utc(element.time).format("HH:mm:ss")=="00:00:00"){                            
-                        return element;
-                      }
-                    })
-                    let maxLabelValue=0;
-                    for (var i = 0; i < chartData.length; i++) {
-                      if(chartData[i+1]){
-                        if(chartData[i].time===chartData[i+1].time){
-                          if(this.barChartLabels.find((element) => {
-                                return element === this.momentFormat(chartData[i].time,"bar");
-                            }) === undefined) {
-                                this.barChartLabels.push(this.momentFormat(chartData[i].time,"bar"));
-                              if(chartData[i].chart=="rain") {
-                            this.barChartData[0].push(chartData[i].value);
-                        }
-                        if(chartData[i].chart=="et0") {
-                          this.barChartData[1].push(chartData[i].value);
-                        }
-                            }
-                        }
-                      }  
-                      if(i+1==chartData.length){
-                        this.renderCharts("bar");
-                      }
-                    }
-                  });
-                });
-              }else if(j+1==data.length){
-                // Swal.fire({
-                //   icon: 'error',
-                //   title: 'Oops...',
-                //   text: 'No tiene configurado los sensores de rain y et0'
-                // })
-              }
-              j++;
-            }
-          });
-      this.loading=false;
+  }*/
+getWeatherStation() {
+  this.loading = true;
+  this.wiseconnService.getWeatherStation(this.farm.id).subscribe((response: any) => {
+    this.loading = false; 
+    this.weatherStation = response.data?response.data:null;
+    if(this.weatherStation){
+      this.getIrrigarionsRealOfWeatherStation();
+      this.setLocalStorageItem("lastFarmId",this.farm.id);
+      this.setLocalStorageItem("lastWeatherStation",this.getJSONStringify(this.weatherStation));
+      this.getWeather();
+    }else{
+      Swal.fire({icon: 'error',title: 'Oops...',text: 'Campo sin "Estación Metereologica" registrada'});
     }
-  }
-  getWeatherStation() {
-    this.loading = true;
-    this.wiseconnService.getWeatherStation(this.farm.id).subscribe((response: any) => {
-      this.loading = false; 
-      this.weatherStation = response.data?response.data:null;
-      if(this.weatherStation){
-        this.getIrrigarionsRealOfWeatherStation();
-        this.setLocalStorageItem("lastFarmId",this.farm.id);
-        this.setLocalStorageItem("lastWeatherStation",this.getJSONStringify(this.weatherStation));
-        this.getChartInformation();
-        this.getWeather();
-      }else{
-        Swal.fire({icon: 'error',title: 'Oops...',text: 'Campo sin "Estación Metereologica" registrada'});
+
+  });
+} 
+
+getWeather(){
+  if (this.farm.latitude && this.farm.longitude) {
+    this.climaLoading = false;
+    this.weatherService.getWeather("e8078bb2fbfd43f1b9f175027202403", [this.farm.latitude, this.farm.longitude]).subscribe((response) => {
+      this.climaLoading = true;
+      this.resetWeatherValues(response);
+      for (const element of response.data.weather) {
+        element.iconLabel = element.hourly[0].weatherIconUrl[0];
+        this.climaDay.push(element.date);
+        this.climaIcon.push(element.iconLabel.value);
+        this.climaMax.push(element.maxtempC);
+        this.climaMin.push(element.mintempC);
       }
-      
     });
-  } 
-  
-  getWeather(){
-    if (this.farm.latitude && this.farm.longitude) {
-      this.climaLoading = false;
-      this.weatherService.getWeather("7da96f2f52f54be7a1b123737202102", [this.farm.latitude, this.farm.longitude]).subscribe((response) => {
-        this.climaLoading = true;
-        this.resetWeatherValues(response);
-        for (const element of response.data.weather) {
-          element.iconLabel = element.hourly[0].weatherIconUrl[0];
-          this.climaDay.push(element.date);
-          this.climaIcon.push(element.iconLabel.value);
-          this.climaMax.push(element.maxtempC);
-          this.climaMin.push(element.mintempC);
-        }
-      });
+  }
+  this.setUrlValue();
+}
+setUrlValue(){
+  switch (this.farm.name) {
+    case "Agrifrut":
+    this.url = "https://cdtec.irrimaxlive.com/?cmd=signin&username=cdtec&password=l01yliEl7H#/u:3435/Campos:l/Agrifrut:f";
+    break;
+    case "Agrifrut II (Nogales y Parrones)":
+    this.url = "https://cdtec.irrimaxlive.com/?cmd=signin&username=cdtec&password=l01yliEl7H#/u:3435/Campos:l/Agrifrut%20II%20(Nogales%20y%20Parrones):f";
+    break;
+    case "Santa Juana de Chincolco":
+    this.url = "https://cdtec.irrimaxlive.com/?cmd=signin&username=cdtec&password=l01yliEl7H#/u:3507/Campos:l/Agricola%20Santa%20Juana%20de%20Chincolco%20SA:f";
+    break;
+    default:
+    this.url = "";
+  }
+}
+resetWeatherValues(response){
+  this.climaDay = [];
+  this.climaIcon = [];
+  this.climaMax = [];
+  this.climaMin = [];
+  this.climaToday = response.data.current_condition[0];
+}
+
+onSelect(select: string, id: number) {
+  switch (select) {
+    case "farm":
+    //this.setLocalStorageItem("lastLineChartLabels",this.getJSONStringify(this.lineChartLabels));
+    //this.setLocalStorageItem("lastLineChartData",this.getJSONStringify(this.lineChartData));
+    //this.setLocalStorageItem("lastBarChartLabels",this.getJSONStringify(this.barChartLabels));
+    //this.setLocalStorageItem("lastBarChartData",this.getJSONStringify(this.barChartData));
+    this.farm=this.getFarm(id);
+    if(this.farm){
+      this.setLocalStorageItem("lastFarmId",this.farm.id);
+      this.getWeatherStation();
+      this.getWeather();
     }
-    this.setUrlValue();
+    break;
+    default:
+    break;
   }
-  setUrlValue(){
-    switch (this.farm.name) {
-      case "Agrifrut":
-      this.url = "https://cdtec.irrimaxlive.com/?cmd=signin&username=cdtec&password=l01yliEl7H#/u:3435/Campos:l/Agrifrut:f";
-      break;
-      case "Agrifrut II (Nogales y Parrones)":
-      this.url = "https://cdtec.irrimaxlive.com/?cmd=signin&username=cdtec&password=l01yliEl7H#/u:3435/Campos:l/Agrifrut%20II%20(Nogales%20y%20Parrones):f";
-      break;
-      case "Santa Juana de Chincolco":
-      this.url = "https://cdtec.irrimaxlive.com/?cmd=signin&username=cdtec&password=l01yliEl7H#/u:3507/Campos:l/Agricola%20Santa%20Juana%20de%20Chincolco%20SA:f";
-      break;
-      default:
-      this.url = "";
-    }
-  }
-  resetWeatherValues(response){
-    this.climaDay = [];
-    this.climaIcon = [];
-    this.climaMax = [];
-    this.climaMin = [];
-    this.climaToday = response.data.current_condition[0];
-  }
-  onSelect(select: string, id: number) {
-    switch (select) {
-      case "farm":
-      this.setLocalStorageItem("lastLineChartLabels",this.getJSONStringify(this.lineChartLabels));
-      this.setLocalStorageItem("lastLineChartData",this.getJSONStringify(this.lineChartData));
-      this.setLocalStorageItem("lastBarChartLabels",this.getJSONStringify(this.barChartLabels));
-      this.setLocalStorageItem("lastBarChartData",this.getJSONStringify(this.barChartData));
-      this.farm=this.getFarm(id);
-      if(this.farm){
-        this.setLocalStorageItem("lastFarmId",this.farm.id);
-        this.getWeatherStation();
-        this.getWeather();
-      }
-      break;
-      default:
-      break;
-    }
-  } 
-  setLocalStorageItem(key,value){
-    localStorage.setItem(key,value);
-  }
-  momentFormat(value:string,chart:string){
-    switch (chart) {
-      case "line":
-      return moment.utc(value).format('DD') +" "+ moment.utc(value).format('MMM');
-      break;
-      case "bar":
-      return moment.utc(value).format('DD') +" "+ moment.utc(value).format('MMM');
-      break;
-      default:
-      return value;
-      break;
-    }      
-  }
-  highchartsShow(){
-    this.lineChartOptions.chart['renderTo'] = this.lineChartElement.nativeElement;
-    this.lineChart = Highcharts.chart(this.lineChartOptions);
-    this.barChartOptions.chart['renderTo'] = this.barChartElement.nativeElement;
-    this.barChart = Highcharts.chart(this.barChartOptions);
-  }
+} 
+setLocalStorageItem(key,value){
+  localStorage.setItem(key,value);
+}
 
 getJSONStringify(data) {
   var cache = [];
@@ -572,98 +264,47 @@ getJSONStringify(data) {
   cache = null;
   return result;
 }
-renderCharts(chart:string) {
-  switch (chart) {
-    case "line":
-    this.lineChart.series[0].setData(this.lineChartData[0]);
-    this.lineChart.series[1].setData(this.lineChartData[1]);
-    this.lineChart.xAxis[0].setCategories(this.lineChartLabels, true);
-    this.renderLineChartFlag=true;
-    break;
-    case "bar":
-    this.barChart.series[0].setData(this.barChartData[0]);
-    this.barChart.series[1].setData(this.barChartData[1]);
-    this.barChart.xAxis[0].setCategories(this.barChartLabels, true);
-    this.renderBarChartFlag=true;
-    break;
-    default:
-    break;
-  }
+changeDateRange(){
+  this.fromDate=this.fromDate;
+  this.toDate=this.toDate;
+  this.weatherStation=this.weatherStation;
 }
 selectTime(event){
-    this.selectedValue = event.value;
-    this.dateRangeByDefault();
-  }
-  dateRangeByDefault(){
-    this.times.map((element)=>{
-      element.active=(element.value===this.selectedValue)?true:false;
-      return element;
-    });
-    switch (this.selectedValue) {
-      case "1D":
-      this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -1);
-      break;
-      case "1S":
-      this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -7);
-      break;
-      case "2S":
-      this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -14);
-      break;
-      case "1M":
-      this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -30);
-      break;
-      case "3M":
-      this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -90);
-      break;
-      case "6M":
-      this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -180);
-      break;
-      default:
-      // code...
-      break;
-    }
-    this.toDate = this.calendar.getToday();
-    this.requestChartBtn=(this.fromDate && this.toDate && this.toDate.after(this.fromDate))?false:true;
-    //this.getChartInformation(false);
-  }
-
-resetChartsValues(chart: string){
-  switch (chart) {
-    case "line":
-    
-    this.temperatureId=null;
-    this.humidityId=null;
-    if(this.lineChart!=undefined){
-      this.lineChart.series[0].setData([]);
-      this.lineChart.series[1].setData([]);
-      this.lineChart.xAxis[0].setCategories([]);
-    }
-
-    this.lineChartLabels=[];
-    for (var i = 0; i < 2; i++) {
-      this.lineChartData[i]=[];
-    }
-    break;  
-    case "bar":
-
-    this.rainId=null;
-    this.et0Id=null;
-    
-    if(this.barChart!=undefined){
-      this.barChart.series[0].setData([]);
-      this.barChart.series[1].setData([]);  
-      this.barChart.xAxis[0].setCategories([]);
-    }
-    this.barChartLabels=[];
-    for (var i = 0; i < 2; i++) {
-      this.barChartData[i]=[];
-    }
+  this.selectedValue = event.value;
+  this.dateRangeByDefault();
+}
+dateRangeByDefault(){
+  this.times.map((element)=>{
+    element.active=(element.value===this.selectedValue)?true:false;
+    return element;
+  });
+  switch (this.selectedValue) {
+    case "1D":
+    this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -1);
+    break;
+    case "1S":
+    this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -7);
+    break;
+    case "2S":
+    this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -14);
+    break;
+    case "1M":
+    this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -30);
+    break;
+    case "3M":
+    this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -90);
+    break;
+    case "6M":
+    this.fromDate = this.calendar.getNext(this.calendar.getToday(), 'd', -180);
     break;
     default:
     // code...
     break;
   }
+  this.toDate = this.calendar.getToday();
+  this.requestChartBtn=(this.fromDate && this.toDate && this.toDate.after(this.fromDate))?false:true;
 }
+
 deleteValueJson(value) {
   var index: number = this.measurements.indexOf(this.measurements.find(x => x.name == value));
   if (index != -1) this.measurements.splice(index, 1);
@@ -718,103 +359,103 @@ validateInput(currentValue: NgbDate, input: string): NgbDate {
   const parsed = this.formatter.parse(input);
   return parsed && this.calendar.isValid(NgbDate.from(parsed)) ? NgbDate.from(parsed) : currentValue;
 }
-  translateMeasurement(measurement:string){
-    let newMeasurement;
-    switch ((measurement).toLowerCase()) {
-          case "station temperature":
-            newMeasurement="Temperatura";
-            break;
-          case "wind direction":
-            newMeasurement="Dir. Viento";
-            break;
-          case "direccion de viento":
-            newMeasurement="Dir. Viento";
-            break;
-          case "velocidad viento":
-            newMeasurement="Vel. Viento";
-            break;
-          case "wind speed (period)":
-            newMeasurement="Vel. Viento";
-            break;
-          case "solar radiation":
-            newMeasurement="Rad. Solar";
-            break;
-          case "sta. rel. humidity":
-            newMeasurement="Humedad";
-            break;
-          case "station relative humidity":
-            newMeasurement="Humedad";
-            break;
-          case "radiacion solar":
-            newMeasurement="Rad. Solar";
-            break;
-          case "solar radiation ":
-            newMeasurement="Rad. Solar";
-            break;
-          default:
-            newMeasurement=measurement;
-            break;
-        }    
-    return newMeasurement;
+translateMeasurement(measurement:string){
+  let newMeasurement;
+  switch ((measurement).toLowerCase()) {
+    case "station temperature":
+    newMeasurement="Temperatura";
+    break;
+    case "wind direction":
+    newMeasurement="Dir. Viento";
+    break;
+    case "direccion de viento":
+    newMeasurement="Dir. Viento";
+    break;
+    case "velocidad viento":
+    newMeasurement="Vel. Viento";
+    break;
+    case "wind speed (period)":
+    newMeasurement="Vel. Viento";
+    break;
+    case "solar radiation":
+    newMeasurement="Rad. Solar";
+    break;
+    case "sta. rel. humidity":
+    newMeasurement="Humedad";
+    break;
+    case "station relative humidity":
+    newMeasurement="Humedad";
+    break;
+    case "radiacion solar":
+    newMeasurement="Rad. Solar";
+    break;
+    case "solar radiation ":
+    newMeasurement="Rad. Solar";
+    break;
+    default:
+    newMeasurement=measurement;
+    break;
+  }    
+  return newMeasurement;
+}
+processMeasurements(data){
+  let measurementsResult=[]
+  let measurementNames=[
+  "Velocidad Viento",
+  "Vel. Viento",
+  "Wind Speed (period)",
+  "Direccion de viento",
+  "Dir. Viento",
+  "Wind Direction",
+  "Radiacion Solar",
+  "Rad. Solar",
+  "Solar radiation ",
+  "Station Relative Humidity",
+  "Sta. Rel. Humidity",
+  "Pluviometro",
+  "Temperatura", 
+  "Humedad",
+  "Station Temperature"]
+  for (const item of data) {
+    if(measurementNames.find(element=>element==item.name)!=undefined){
+      if(measurementsResult.find(element=>element.name==item.name)==undefined){
+        measurementsResult.push(item);
+      }
+    }  
   }
-  processMeasurements(data){
-      let measurementsResult=[]
-      let measurementNames=[
-          "Velocidad Viento",
-          "Vel. Viento",
-          "Wind Speed (period)",
-          "Direccion de viento",
-          "Dir. Viento",
-          "Wind Direction",
-          "Radiacion Solar",
-          "Rad. Solar",
-          "Solar radiation ",
-          "Station Relative Humidity",
-          "Sta. Rel. Humidity",
-          "Pluviometro",
-          "Temperatura", 
-          "Humedad",
-          "Station Temperature"]
-      for (const item of data) {
-        if(measurementNames.find(element=>element==item.name)!=undefined){
-          if(measurementsResult.find(element=>element.name==item.name)==undefined){
-            measurementsResult.push(item);
-          }
-      }  
+  return measurementsResult;
+}
+decimalProcessor(value,decimals){
+  return value.toFixed(decimals);
+}
+getCardinalPointOfTheValue(value:number){
+  let CardinalPoint;
+  switch (value) {
+    case 360:
+    CardinalPoint='N';
+    break;
+    case 90:
+    CardinalPoint='E';
+    break;
+    case 180:
+    CardinalPoint='S';
+    break;
+    case 270:
+    CardinalPoint='W';
+    break;
+    default:
+    if(value>=0&&value<=89.99){
+      CardinalPoint='NE';
+    }else if(value>=90.1&&value<=179.99){
+      CardinalPoint='SE';
+    }else if(value>=180.1&&value<=269.99){
+      CardinalPoint='SW';
+    }else if(value>=270.1&&value<=359.99){
+      CardinalPoint='NW';
     }
-    return measurementsResult;
+    break;
   }
-  decimalProcessor(value,decimals){
-    return value.toFixed(decimals);
-  }
-  getCardinalPointOfTheValue(value:number){
-    let CardinalPoint;
-    switch (value) {
-      case 360:
-        CardinalPoint='N';
-        break;
-      case 90:
-        CardinalPoint='E';
-        break;
-      case 180:
-        CardinalPoint='S';
-        break;
-      case 270:
-        CardinalPoint='W';
-        break;
-      default:
-        if(value>=0&&value<=89.99){
-          CardinalPoint='NE';
-        }else if(value>=90.1&&value<=179.99){
-          CardinalPoint='SE';
-        }else if(value>=180.1&&value<=269.99){
-          CardinalPoint='SW';
-        }else if(value>=270.1&&value<=359.99){
-          CardinalPoint='NW';
-        }
-        break;
-    }
-    return CardinalPoint;
-  }
+  return CardinalPoint;
+}
 
 }

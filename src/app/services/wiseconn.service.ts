@@ -77,7 +77,7 @@ export class WiseconnService {
     )
   }
   getSensorTypesOfFarm(id:number): Observable<any> { 
-    return this.http.get<any>(this.baseurl + '/farms/'+id+"/sensortypes", this.httpOptions)
+    return this.http.get<any>(this.baseurl + '/farms/'+id+'/sensortypes', this.httpOptions)
     .pipe(
       retry(1),
       catchError(this.errorHandl)
@@ -97,7 +97,6 @@ export class WiseconnService {
       catchError(this.errorHandl)
     )
   }
-  
   getMeterogoAgrifut(id): Observable<any> {
     return this.http.get<any>(this.baseurl + "/zones/"+id+"/measures", this.httpOptions)
     .pipe(
@@ -121,7 +120,7 @@ export class WiseconnService {
   }  
   // no funciona con http://developers.wiseconn.com/
   getAccounts(): Observable<any> { 
-    return this.http.get<any>(this.baseurl + '/accounts/', this.httpOptions)
+    return this.http.get<any>(this.baseurl + "/accounts/", this.httpOptions)
     .pipe(
       retry(1),
       catchError(this.errorHandl)
@@ -129,12 +128,13 @@ export class WiseconnService {
   }
   // no funciona con http://developers.wiseconn.com/
   getAccount(id:number): Observable<any> { 
-    return this.http.get<any>(this.baseurl + '/accounts/' +id, this.httpOptions)
+    return this.http.get<any>(this.baseurl + "/accounts/" +id, this.httpOptions)
     .pipe(
       retry(1),
       catchError(this.errorHandl)
     )
   }
+
   errorHandl(error) {
     let errorMessage = '';
     if(error.error instanceof ErrorEvent) {

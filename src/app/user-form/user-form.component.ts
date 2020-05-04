@@ -180,6 +180,7 @@ export class UserFormComponent implements OnInit {
 		},error => {
 	   		console.log("error:",error)
 			this.loading=false;
+			if(error.error)
 			this.notificationService.showError('Error',error.error)
 		});
 	}
@@ -204,7 +205,9 @@ export class UserFormComponent implements OnInit {
 		   	error => {
 	   			console.log("error:",error)
 				this.loading=false;
-		   		this.notificationService.showError('Error',error.error)
+		   		
+				if(error.error)
+				this.notificationService.showError('Error',error.error)
 		    });
 	    } 
 	    else{
@@ -216,8 +219,10 @@ export class UserFormComponent implements OnInit {
 		   	error => {
 	   			console.log("error:",error)
 				this.loading=false;
-		   		this.notificationService.showError('Error',error.error)
+		   		
+				if(error.error)
+				this.notificationService.showError('Error',error.error)
 		    });
-	    }		
+	    }
 	}
 }
