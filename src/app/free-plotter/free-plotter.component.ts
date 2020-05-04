@@ -54,9 +54,9 @@ export class FreePlotterComponent implements OnInit {
 
 	    },
 	    colors: [],//dinamic '#D12B34','#00B9EE'
-	    // title: {
-	    //     text: 'Title'
-	    // },
+	    title: {
+	        text: ''
+	    },
 	    // subtitle: {
 	    //     text: 'Subtitle'
 	    // },
