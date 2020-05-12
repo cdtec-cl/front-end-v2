@@ -26,6 +26,7 @@ export class WiseconnService {
     }else{
       httpHeaders={
         "Accept": "application/json",
+        "Access-Control-Allow-Origin"  : "*"
       };
     }
     this.httpOptions={
