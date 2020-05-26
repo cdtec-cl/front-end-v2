@@ -59,6 +59,7 @@ export class ChartComponent implements OnInit,OnChanges {
 			categories: [],
 			startOnTick: true,
 			endOnTick: true,
+			type: 'datetime'
 		}],
 		yAxis: [{ // left y axis
 			title: {
@@ -91,7 +92,8 @@ export class ChartComponent implements OnInit,OnChanges {
 		series: [],
 		tooltip: {
 			shared: true,
-			crosshairs: true
+			crosshairs: true,
+			xDateFormat: '%Y-%m-%d'
 		},
 	};
 	//colors
@@ -215,7 +217,9 @@ export class ChartComponent implements OnInit,OnChanges {
 	momentFormat(value:string,chart:string){
 		switch (chart) {
 			case "label":
-			return moment.utc(value).format('DD') +" "+ moment.utc(value).format('MMM');
+			// return moment.utc(value).format('DD') +" "+ moment.utc(value).format('MMM');
+			return moment.utc(value).format("YYYY-MM-DD HH:mm:ss");
+
 			break;
 			case "value":
 			return moment.utc(value).format("YYYY-MM-DD HH:mm:ss");
@@ -285,7 +289,8 @@ export class ChartComponent implements OnInit,OnChanges {
 									chartData = chartData.filter((element) => {
 										let hour=moment(element.time).hours();
 										let minutes=moment(element.time).minutes();
-										if(hour==4 || hour==8 || hour==12 || hour==16 || hour==20 || hour==0 && minutes==0)
+										if(hour >= 0 && hour<24 && (minutes==30 || minutes==0))
+									
 											return element;
 									});
 									for (var i = 0; i < chartData.length ; i++) {
