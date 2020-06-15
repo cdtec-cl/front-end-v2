@@ -53,6 +53,7 @@ import { SoilAnalysisComponent } from 'app/soil-analysis/soil-analysis.component
 //componentes de uso compartido
 import { PolygonMapComponent } from 'app/components/polygon-map/polygon-map.component';
 import { ChartComponent } from 'app/components/chart/chart.component';
+import { ChartVersionComponent } from 'app/components/chart-version/chart-version.component';
 import { SoilAnalysisIosComponent } from 'app/soil-analysis-ios/soil-analysis-ios.component';
 
 @NgModule({
@@ -103,7 +104,8 @@ import { SoilAnalysisIosComponent } from 'app/soil-analysis-ios/soil-analysis-io
     AccountSettingFormComponent,
     AccountSettingsComponent,
     PolygonMapComponent,
-    ChartComponent
+    ChartComponent,
+    ChartVersionComponent
   ],
   entryComponents:[
     DialogMessage

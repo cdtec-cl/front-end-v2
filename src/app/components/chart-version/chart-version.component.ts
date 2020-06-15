@@ -5,7 +5,6 @@ import * as moment from "moment";
 
 //services
 import { WiseconnService } from 'app/services/wiseconn.service';
-import { Variable } from '@angular/compiler/src/render3/r3_ast';
 //graficas
 // tslint:disable-next-line:no-var-requires
 const Highcharts = require('highcharts/highstock');
@@ -16,11 +15,11 @@ require('highcharts/modules/solid-gauge')(Highcharts);
 require('highcharts/highcharts-more')(Highcharts);
 
 @Component({
-	selector: 'app-chart',
-	templateUrl: './chart.component.html',
-	styleUrls: ['./chart.component.scss']
+	selector: 'app-chart-version',
+	templateUrl: './chart-version.component.html',
+	styleUrls: ['./chart-version.component.scss']
 })
-export class ChartComponent implements OnInit,OnChanges {
+export class ChartVersionComponent implements OnInit,OnChanges {
 	@Input() weatherStation:any;
 	@Input() title:string;
 	@Input() type:string;
@@ -29,18 +28,6 @@ export class ChartComponent implements OnInit,OnChanges {
 	public firstId: number = null;
 	public secondId: number = null;
 	public loading:boolean=false;
-	//graficas
-	//rango de fechas para graficas
-	@Input() fromDate:any;
-	@Input() toDate:any;
-	public dateRange: any = null;
-	public dateRangeHistory:any[]=[];
-	public selectedValue: any = '1S';
-	public requestChartBtn: boolean =true;
-	//chart
-	@ViewChild('chart', { static: true }) public chartElement: ElementRef;
-	private chart;
-	public chartData:any[]=[[],[]];
 	public dataPrueba = [
 		[
 			1528119000000,
@@ -1291,14 +1278,25 @@ export class ChartComponent implements OnInit,OnChanges {
 			205.53
 		],
 	];
-
+	//graficas
+	//rango de fechas para graficas
+	@Input() fromDate:any;
+	@Input() toDate:any;
+	public dateRange: any = null;
+	public dateRangeHistory:any[]=[];
+	public selectedValue: any = '1S';
+	public requestChartBtn: boolean =true;
+	//chart
+	@ViewChild('chartVersion', { static: true }) public chartElement: ElementRef;
+	private chart;
+	public chartData:any[]=[[],[]];
 	public chartLabels:any={
 		values:[],
 		labels:[]
 	};
 	public chartOptions:any = {
 		chart: {
-			zoomType: 'xy'
+			type: null,
 		},
 		colors: [],
 		title: {
@@ -1307,28 +1305,15 @@ export class ChartComponent implements OnInit,OnChanges {
 		subtitle: {
 			text: null
 		},
-		xAxis: {
-			/*type: 'datetime',					
-			tickInterval : 2000000,*/
-			type: 'datetime', 
-			id:'x0',
-			startOnTick: false,
-			endOnTick: false,
-			tickLength: 0,
-			labels : {
-				style: {
-		    		"font-family": 'Tahoma,"Trebuchet MS",sans-serif',
-		    		"font-size": '11px',
-		    		"textOverflow": "none"
-				},
-				autoRotation: false,
-				padding: 0
-			}
-			
-		},
-		/*yAxis: [{ // left y axis
+		xAxis: [{
+		/*	categories: [],
+			startOnTick: true,
+			endOnTick: true,*/
+			type: 'datetime'
+		}],
+		yAxis: [{ // left y axis
 			title: {
-				text: 'Celsius'
+				text: null
 			},
 			// tickInterval: 5,
 			labels: {
@@ -1345,36 +1330,6 @@ export class ChartComponent implements OnInit,OnChanges {
 				format: '{value:.,0f}'
 			},
 			showFirstLabel: false
-		}],*/
-		
-		
-		yAxis: [{ // Primary yAxis
-			labels: {
-				format: '{value}',
-				style: {
-					color: '#d12b34'
-				}
-			},
-			title: {
-				text: 'Temperatura',
-				style: {
-					color: '#d12b34'
-				}
-			}
-		}, { // Secondary yAxis
-			title: {
-				text: 'Humedad',
-				style: {
-					color: '#00b9ee'
-				}
-			},
-			labels: {
-				format: '{value} ',
-				style: {
-					color: '#00b9ee'
-				}
-			},
-			opposite: true
 		}],
 		plotOptions: {
 			line: {
@@ -1408,17 +1363,18 @@ export class ChartComponent implements OnInit,OnChanges {
 		private wiseconnService: WiseconnService, 
 		) { }
 
-	ngOnInit(){    
-		this.chartOptions.title.text=this.title;
-		this.chartOptions.chart.type=this.type;
+	ngOnInit(){      		
+		
+		this.chartOptions.title.text= this.title;
+		this.chartOptions.chart.type= this.type;
 		switch (this.title) {
 			case "TEMPERATURA/HUMEDAD":
 				this.chartOptions.colors=['#d12b34','#00b9ee'];
 				this.chartOptions.series=[{ 
-					data: [],  
+					data: [],
 					name: 'Temperatura',
 					type: 'line',
-					 yAxis: 0 
+					//yAxis: 0 
 				},{ 
 					data: [], 
 					name: 'Humedad',
@@ -1466,10 +1422,15 @@ export class ChartComponent implements OnInit,OnChanges {
 			// code...
 			break;
 		}
+
+		
 		this.highchartsShow();
 	}
 	ngOnChanges(changes: SimpleChanges) {
-	/*	if(changes.weatherStation!=undefined){
+		this.addData();
+		this.renderCharts();
+
+		/*if(changes.weatherStation!=undefined){
 			const weatherStationCurrentValue: SimpleChange = changes.weatherStation.currentValue;
 			this.weatherStation=weatherStationCurrentValue;
 		}
@@ -1478,21 +1439,26 @@ export class ChartComponent implements OnInit,OnChanges {
 			const toDateCurrentValue: SimpleChange = changes.toDate.currentValue;
 			this.fromDate = fromDateCurrentValue;
 			this.toDate = toDateCurrentValue;
-		}*/
+		}
 		if(this.weatherStation&&this.fromDate&&this.toDate){
 			this.getChartInformation(false);			
-		}
+		}*/
 	}
 	highchartsShow(){
 		this.chartOptions.chart['renderTo'] = this.chartElement.nativeElement;
 		this.chart = Highcharts.chart(this.chartOptions);
 	}
 	renderCharts() {
-		for (var i = this.chart.series.length - 1; i >= 0; i--) {		
+		for (var i = this.chart.series.length - 1; i >= 0; i--) {
 			this.chart.series[i].setData(this.chartData[i]);
-		}
+		} 
 		// this.chart.xAxis[0].setCategories(this.chartLabels.labels, true);
 		this.renderchartFlag=true;
+	}
+
+	addData(){
+		this.chartData[0]= this.dataPrueba;
+		this.chartData[1]= this.dataPrueba;
 	}
 	resetChartsValues(){
 		this.firstId=null;
@@ -1524,15 +1490,8 @@ export class ChartComponent implements OnInit,OnChanges {
 			break;
 		}      
 	}
-
-	addData(data){
-		this.chartData[0]= data[0];
-		this.chartData[1]= data[1];
-		this.renderCharts(); 
-	}
 	getChartInformation(goBackFlag:boolean=false){
-		// this.resetChartsValues();
-		let dataarray = new Array(); 
+		this.resetChartsValues();
 		if(this.fromDate!=undefined&&this.toDate!=undefined){
 			this.dateRange = {
 				initTime: moment(this.fromDate.year + "-" + this.fromDate.month + "-" + this.fromDate.day).format("YYYY-MM-DD"),
@@ -1545,65 +1504,37 @@ export class ChartComponent implements OnInit,OnChanges {
 					selectedValue:this.selectedValue
 				});
 			}
-			this.loading=true;		
-			 
-			
+			this.loading=true;
 			this.wiseconnService.getMeasuresOfZones(this.weatherStation.id).subscribe((response) => {
 				this.loading=false;
+				let data=response.data?response.data:response;				
 				
-				let data=response.data?response.data:response;
 				if(data.length>0){
 					let chartFlag=false;
 					let j=0;
 					let htmlErrors=null;
-					while (!chartFlag && j < data.length - 1) {
+					while (!chartFlag && j < data.length) {
 						if (data[j].sensorType === this.firstSensorType||data[j].name==this.firstSensorType) {
 							this.firstId = data[j].id;
 						}
 						if (data[j].sensorType === this.secondSensorType||data[j].name==this.secondSensorType) {
 							this.secondId = data[j].id;
 						}
-						let data2 = 'id0=' + this.firstId + '&' + 'id1=' + this.secondId;
-						
-						
-
+						let data2 = JSON.stringify('id0=' + this.firstId + '&' + 'id1=' + this.secondId);
 						if(this.firstId&&this.secondId){
 							chartFlag=true;
 							this.loading = true;
 							this.wiseconnService.getDataByMeasure(this.firstId,this.dateRange, data2).subscribe((response) => {
-								let firstChartData = response.data ? response.data : response;
-								/*for (var i = 0; i < firstChartData.length ; i++) {
-									/*console.log(firstChartData[i][0]);
-									console.log(firstChartData[i][1]);
-									dataarray.push([firstChartData[i][0], firstChartData[i][1]]);
-									
-								}*/
-								this.addData(firstChartData);
-
-								console.log(firstChartData);
-
-								
-								/*this.chartOptions.series[0].data =  this.dataPrueba;
-
-								console.log(this.chartOptions.series);*/
-								
-								// this.chartData = firstChartData;
-								
-								
-								
-		
-
-								 //this.renderCharts();
-
-								/*this.wiseconnService.getDataByMeasure(this.secondId,this.dateRange).subscribe((response) => {
+								let firstChartData=response.data?response.data:response;
+								this.wiseconnService.getDataByMeasure(this.secondId,this.dateRange, data2).subscribe((response) => {
 									this.loading = false;
 									let secondChartData=response.data?response.data:response;
 									// this.loading = false;
-									firstChartData=firstChartData.map((element)=>{
+									firstChartData=firstChartData.map((element)=> {
 										element.chart=this.firstSensorType.toLowerCase();
 										return element
 									})
-									secondChartData=secondChartData.map((element)=>{
+									secondChartData=secondChartData.map((element)=> {
 										element.chart=this.secondSensorType.toLowerCase();
 										return element
 									})
@@ -1645,7 +1576,7 @@ export class ChartComponent implements OnInit,OnChanges {
 								error=>{
 									this.loading = false;
 									console.log("error:",error)
-								});*/
+								});
 							},
 							error=>{
 								this.loading = false;
