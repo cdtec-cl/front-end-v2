@@ -16,7 +16,7 @@ export const ROUTESADMIN: RouteInfo[] = [ //admin
     //{ path: '/client', title: 'Cuentas',  icon:'Campo-Verde', class: '' , active : false},
     { path: '/weather-monitoring', title: 'Monitoreo del clima',  icon:'Graficador-libre-verde', class: '', active : false },
     { path: '/free-plotter', title: 'Analizador Grafico',  icon:'Graficador-libre-verde', class: '', active : false },
-    { path: '/soil-analysis-ios', title: 'Humedad en iOS',  icon:'Suelo', class: '', active : false },
+    // { path: '/soil-analysis-ios', title: 'Humedad en iOS',  icon:'Suelo', class: '', active : false },
     { path: '/soil-analysis', title: 'Humedad de Suelo',  icon:'Suelo', class: '', active : false },
     //{ path: '/report-instalacion', title: 'Reporte de Instalación',  icon:'Reporte', class: '', active : false },
     { path: '/users', title: 'Usuarios',  icon: 'Usuario-verde', class: '', active : false },
@@ -26,7 +26,7 @@ export const ROUTESCONSULTANT: RouteInfo[] = [ //consultor
     { path: '/dashboard', title: 'Inicio',  icon: 'Dashboard-Verde', class: '', active : true },
     { path: '/weather-monitoring', title: 'Monitoreo del clima',  icon:'Graficador-libre-verde', class: '', active : false },
     { path: '/free-plotter', title: 'Analizador Grafico',  icon:'Graficador-libre-verde', class: '', active : false },
-    { path: '/soil-analysis-ios', title: 'Humedad en iOS',  icon:'Suelo', class: '', active : false },
+    // { path: '/soil-analysis-ios', title: 'Humedad en iOS',  icon:'Suelo', class: '', active : false },
     { path: '/soil-analysis', title: 'Humedad de Suelo',  icon:'Suelo', class: '', active : false },
     { path: '/account-settings', title: 'Configuración',  icon:'Configuracion', class: '', active : false },
 ];

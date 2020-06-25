@@ -25,14 +25,15 @@ require('highcharts/highcharts-more')(Highcharts);
 	styleUrls: ['./free-plotter.component.scss']
 })
 export class FreePlotterComponent implements OnInit {
-	public userLS:any=null;
-	public user:any=null;
-	public loading:boolean=false;
+	public userLS:any = null;
+	public user:any = null;
+	public loading: boolean = false;
 	public farms:any[]=[];	
 	public farm:any=null;
 	public zonesAux:any[]=[];
 	public sensorTypes:any[]=[];
-	//rango de fechas para graficas
+	public sensorData:any[]=[];
+	// rango de fechas para graficas
 	public today = Date.now();
 	public fromDate: NgbDate;
 	public toDate: NgbDate;
@@ -41,8 +42,8 @@ export class FreePlotterComponent implements OnInit {
 	public selectedValue: any = '1S';
 	public hoveredDate: NgbDate;
 	public requestChartBtn: boolean =true;
-	//graficas
-	//chart
+	// graficas
+	// chart
 	@ViewChild('chartElement', { static: true }) public chartElement: ElementRef;
 	private chart;
 	public chartDataLength:number=null;
@@ -50,9 +51,9 @@ export class FreePlotterComponent implements OnInit {
 	public chartLabels:any[]=[];
 	public chartOptions:any = {
 		chart: {
-			type: 'spline',
-
+			zoomType: 'xy'
 		},
+		// tslint:disable-next-line: comment-format
 		colors: [],//dinamic '#D12B34','#00B9EE'
 		title: {
 			text: ''
@@ -60,11 +61,23 @@ export class FreePlotterComponent implements OnInit {
 		subtitle: {
 			text: ''
 		},
-		xAxis: [{
-			categories: [],
-			startOnTick: true,
-			endOnTick: true,
-		}],
+		xAxis: {			
+			type: 'datetime', 
+			id:'x0',
+			startOnTick: false,
+			endOnTick: false,
+			tickLength: 0,
+			labels : {
+				style: {
+		    		"font-family": 'Tahoma,"Trebuchet MS",sans-serif',
+		    		"font-size": '11px',
+		    		"textOverflow": "none"
+				},
+				autoRotation: false,
+				padding: 0
+			}
+			
+		}, 
 		yAxis: [],
 		plotOptions: {
 			line: {
@@ -77,10 +90,11 @@ export class FreePlotterComponent implements OnInit {
 		series: [],//dinamic {data: [],name: 'Humedad',type: 'line',yAxis: 1 }
 		tooltip: {
 			shared: true,
-			crosshairs: true
+			crosshairs: true,
+			xDateFormat: '%Y-%m-%d %H:%M:%S'
 		},
 	};
-	//times
+	// times
 	public times =[
 	{ value: '1D' , active: false},
 	{ value: '1S' , active: true},
@@ -89,7 +103,7 @@ export class FreePlotterComponent implements OnInit {
 	{ value: '3M' , active: false},
 	{ value: '6M' , active: false},
 	]
-	//selects
+	// selects
 	public selectGroups:any[]=[];
 	public chartColors:string[]=['#D12B34','#00B9EE','#DBAB3F','#31B404','#084B8A','#DF0174'];
 	public defaultSelectGroups:any={
@@ -124,6 +138,7 @@ export class FreePlotterComponent implements OnInit {
 		public calendar: NgbCalendar, 
 		public formatter: NgbDateParserFormatter) { }
 
+	// tslint:disable-next-line: indent
 	ngOnInit() {//rango de fechas para graficas
 		if(localStorage.getItem("user")){
 			this.userLS=JSON.parse(localStorage.getItem("user"));
@@ -162,6 +177,7 @@ export class FreePlotterComponent implements OnInit {
 		error=>{
 			this.loading = false;
 			
+			// tslint:disable-next-line: curly
 			if(error.error)
 				this.notificationService.showError('Error',error.error)
 			console.log("error:",error)
@@ -172,7 +188,7 @@ export class FreePlotterComponent implements OnInit {
 		this.wiseconnService.getFarms().subscribe((response: any) => {
 			this.loading=false;
 			this.farms = response.data?response.data:response;
-			if(localStorage.getItem("lastFarmId")){
+			if(localStorage.getItem('lastFarmId')) {
 				this.farm=this.getFarm(parseInt(localStorage.getItem("lastFarmId")));
 				this.getSensorTypesOfFarm(parseInt(localStorage.getItem("lastFarmId")));
 			}else{
@@ -270,10 +286,13 @@ export class FreePlotterComponent implements OnInit {
 				return element.id == id
 			});
 			break;
-			case "zone":
-			this.selectGroups[this.selectGroups.length-1].zoneSelected = this.selectGroups[this.selectGroups.length-1].zones.find((element)=>{
+			case "zone":	
+
+			this.selectGroups[this.selectGroups.length-1].zoneSelected = this.selectGroups[this.selectGroups.length-1].zones.find((element)=>{				
 				return element.zone.id == id
 			});
+
+			
 			this.selectGroups[this.selectGroups.length-1].sensors=[];
 			for (let measure of this.selectGroups[this.selectGroups.length-1].zoneSelected.zone.measures){
 				if(measure.sensorDepth && measure.depthUnit && measure.unit){
@@ -287,6 +306,11 @@ export class FreePlotterComponent implements OnInit {
 					});
 				}
 			}
+
+			
+
+			this.loadSensor(this.selectGroups[this.selectGroups.length-1].zoneSelected.id_zone, 
+				this.selectGroups[this.selectGroups.length-1].variablesSelected.name);
 			break;
 			case "sensor":
 			this.selectGroups[this.selectGroups.length-1].sensorSelected = this.selectGroups[this.selectGroups.length-1].sensors.find((element)=>{
@@ -296,6 +320,39 @@ export class FreePlotterComponent implements OnInit {
 			default:
 			break;
 		}
+	}
+
+	/**
+	 * Carga sensor
+	 */
+
+	loadSensor(zone, type ) {
+		this.loading=true;
+		this.wiseconnService.getSensorMeasure(zone,type).subscribe((response: any) => {
+			this.loading=false;		
+			console.log(response);
+			this.sensorData=response.data?response.data:response;
+			for (let sensordata of this.sensorData) {
+				let sensor= sensordata.sensorDepth + " " + sensordata.depthUnit + " ("+sensordata.unit+")";
+				this.selectGroups[this.selectGroups.length-1].sensors.push({
+					id:this.selectGroups[this.selectGroups.length-1].sensors.length+1,
+					measure_id:sensordata.id,
+					name:sensor,
+					name_id:this.selectGroups[this.selectGroups.length-1].sensors.length+1 + '('+ sensordata.unit +')',
+					sensorDepth:sensordata.sensorDepth,
+					depthUnit:sensordata.depthUnit,
+					unit:sensordata.unit
+				});
+			}
+		},
+		error=>{
+			this.loading = false;
+			
+			if(error.error)
+				this.notificationService.showError('Error',error.error)
+			console.log('error:',error)
+		})
+
 	}
 	//datepicker
 	onDateSelection(date: NgbDate,element:string) {
@@ -371,11 +428,11 @@ export class FreePlotterComponent implements OnInit {
 			break;
 		}      
 	}
-	resetChartsValues(){
+	resetChartsValues() {
 		this.chartOptions.colors=[];
 		this.chartOptions.series=[];
 		this.chartOptions.yAxis=[];
-		this.chartOptions.xAxis[0].categories=[];
+		//this.chartOptions.xAxis[0].categories=[];
 		this.highchartsShow();
 	}
 	getSensorName(sensorType:string){
@@ -461,6 +518,10 @@ export class FreePlotterComponent implements OnInit {
 		}	
 	}
 	requestDataChart(goBackFlag:boolean=false){
+		console.log('Select');
+		
+		console.log(this.selectGroups);
+		
 		if(this.selectGroups[this.selectGroups.length-1].typeSelected&&
 			this.selectGroups[this.selectGroups.length-1].resolutionSelected&&
 			this.selectGroups[this.selectGroups.length-1].zoneSelected){
@@ -481,15 +542,17 @@ export class FreePlotterComponent implements OnInit {
 		for(let selectGroup of this.selectGroups){
 			let j=0;
 			let getDataByMeasure=false;
-			this.loading=true;
+			this.loading=true;			
 			this.wiseconnService.getDataByFilterMeasure({
+				measure_id: selectGroup.sensorSelected.measure_id,
+				variable: selectGroup.variablesSelected.name, 
 				zone:selectGroup.zoneSelected.zone,
 				sensorSelected:selectGroup.sensorSelected
 			},this.dateRange).subscribe((response) => {
 				this.loading=false;
 				getDataByMeasure=true;
 				let chartData=response.data?response.data:response;
-				chartData = chartData.filter((element) => {
+				/*chartData = chartData.filter((element) => {
 					let minutes=moment(element.time).minutes();
 					switch (this.selectGroups[this.selectGroups.length-1].resolutionSelected.name) {
 						case "15 Minutos":
@@ -513,8 +576,8 @@ export class FreePlotterComponent implements OnInit {
 						break;
 					}
 
-				});
-				chartData.sort(function (a, b) {
+				});*/
+				/*chartData.sort(function (a, b) {
 					if (moment(a.time).isAfter(b.time)) {
 						return 1;
 					}
@@ -522,18 +585,18 @@ export class FreePlotterComponent implements OnInit {
 						return -1;
 					}
 					return 0;
-				});
+				});*/
 
-				if(chartData.length>this.chartOptions.xAxis[0].categories.length){
+				/*if(chartData.length>this.chartOptions.xAxis[0].categories.length){
 					this.chartOptions.xAxis[0].categories=[];
 					for(let data of chartData){
 						this.chartOptions.xAxis[0].categories.push(this.momentFormat(data.time,"line"));
 					}
-				}
+				}*/
 
-				chartData=chartData.map(element=>{
+				/*chartData=chartData.map(element=>{
 					return element.value
-				});
+				});*/
 
 				let yAxis=(this.chartOptions.yAxis.length % 2 == 0)?{ // Primary yAxis
 					labels: {
@@ -568,12 +631,12 @@ export class FreePlotterComponent implements OnInit {
 				};
 				let serieLabelName=selectGroup.variablesSelected.name +"/"+selectGroup.zoneSelected.zone.name;
 				let serie=((selectGroup.typeSelected.name).toLowerCase() == "linea")?{
-					data: chartData.slice(0, this.chartDataLength-1),
+					data: chartData,
 					name: serieLabelName,
 					type: 'line',
 					yAxis: this.chartOptions.series.length
 				}:{
-					data: chartData.slice(0, this.chartDataLength-1),
+					data: chartData,
 					name: serieLabelName,
 					type: 'column',
 					yAxis: this.chartOptions.series.length
@@ -688,50 +751,60 @@ getDefaultSelectGroups(){
 	};
 }
 addSelectGroups(){
+	console.log(this.selectGroups);
+	
 	if(this.selectGroups.length>0){
 		if(this.selectGroups.length<6){
 			if(this.selectGroups[this.selectGroups.length-1].typeSelected&&
 				this.selectGroups[this.selectGroups.length-1].resolutionSelected&&
 				this.selectGroups[this.selectGroups.length-1].zoneSelected){
 				this.selectGroups.push(this.getDefaultSelectGroups())
-			if(localStorage.getItem("lastFarmId")){
-				for (let sensorType of this.sensorTypes) {
-					for (let variableGroup of this.selectGroups[this.selectGroups.length-1].variableGroups) {
-						if(variableGroup.name==sensorType.group){
-							variableGroup.variable.push({id:sensorType.id,name:sensorType.name})
+				if(localStorage.getItem("lastFarmId")){
+					for (let sensorType of this.sensorTypes) {
+						for (let variableGroup of this.selectGroups[this.selectGroups.length-1].variableGroups) {
+							if(variableGroup.name==sensorType.group){
+								variableGroup.variable.push({id:sensorType.id,name:sensorType.name})
+							}
 						}
 					}
 				}
-			}
+				}else{
+				let message='';
+				if(!this.selectGroups[this.selectGroups.length-1].typeSelected){
+					message+='Debe seleccionar el tipo de gráfica <br>' 
+				}
+				if(!this.selectGroups[this.selectGroups.length-1].resolutionSelected){
+					message+='Debe seleccionar la resolución <br>' 
+				}
+				if(!this.selectGroups[this.selectGroups.length-1].zoneSelected){
+					message+='Debe seleccionar la zona <br>' 
+				}
+				Swal.fire({
+					icon: 'error',
+					title: 'Oops...',
+					html: message
+				})
+				}
 		}else{
-			let message='';
-			if(!this.selectGroups[this.selectGroups.length-1].typeSelected){
-				message+='Debe seleccionar el tipo de gráfica <br>' 
-			}
-			if(!this.selectGroups[this.selectGroups.length-1].resolutionSelected){
-				message+='Debe seleccionar la resolución <br>' 
-			}
-			if(!this.selectGroups[this.selectGroups.length-1].zoneSelected){
-				message+='Debe seleccionar la zona <br>' 
-			}
 			Swal.fire({
 				icon: 'error',
 				title: 'Oops...',
-				html: message
+				text: 'Ya no se puede añadir más selectores'
 			})
 		}
-	}else{
-		Swal.fire({
-			icon: 'error',
-			title: 'Oops...',
-			text: 'Ya no se puede añadir más selectores'
-		})
+		}else{
+			this.selectGroups.push(this.getDefaultSelectGroups())
+			if(localStorage.getItem("lastFarmId")){
+				this.getSensorTypesOfFarm(parseInt(localStorage.getItem("lastFarmId")));
+			}
+		}
 	}
-}else{
-	this.selectGroups.push(this.getDefaultSelectGroups())
-	if(localStorage.getItem("lastFarmId")){
-		this.getSensorTypesOfFarm(parseInt(localStorage.getItem("lastFarmId")));
+
+	deleteSelectGroups(){
+		if(this.selectGroups.length>0){
+			this.selectGroups.splice(this.selectGroups.length-1,this.selectGroups.length); 
+		}	
+		console.log(this.selectGroups);
+		
 	}
-}
-}
 }

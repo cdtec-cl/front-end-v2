@@ -55,7 +55,7 @@
 						</mat-select>
 					</mat-form-field>
 		        </div>
-	        </div>
+	        </div> 
       		<div class="col-md-2">
 				<div class="form-group row">
 		            <mat-form-field class="mat-select-custom w-100" floatLabel="never">
@@ -89,18 +89,19 @@
       		<div class="col-md-2">
       			<div class="form-group row">
 		            <mat-form-field class="mat-select-custom w-100" floatLabel="never">
-						<mat-label>{{selectGroup.sensorSelected?selectGroup.sensorSelected.name:'Seleccionar Sensor'}}</mat-label>
+						<mat-label>{{selectGroup.sensorSelected?selectGroup.sensorSelected.name_id:'Seleccionar Sensor'}}</mat-label>
 						<mat-select [disabled]="selectGroups.length>i+1">
-							<mat-option  *ngFor="let sensor of selectGroup.sensors" (click)="onSelect('sensor',sensor.id)">{{sensor.name}}</mat-option>
+							<mat-option  *ngFor="let sensor of selectGroup.sensors" (click)="onSelect('sensor',sensor.id)">#{{sensor.id}} {{sensor.unit}} </mat-option>
 						</mat-select>
 					</mat-form-field>
 		        </div>
       		</div>
-      		<div class="col-md-1 add-group-btn-container">
+      		<div class="col-md-05 add-group-btn-container">
       			<span class="circle-color" [style.backgroundColor]="selectGroup.chartColor">{{i+1}}</span>
       		</div>
-      		<div class="col-md-1 add-group-btn-container" *ngIf="selectGroups.length==i+1">
-      			<button class="btn-greem w-100"  (click)="addSelectGroups()"><i class="material-icons">add</i></button>
+      		<div class="col-md-15 add-group-btn-container" *ngIf="selectGroups.length==i+1">
+				  <button class="btn-greem2 w-100"  (click)="addSelectGroups()"><i class="material-icons pading-top-3">add_circle</i></button>
+				  <button class="btn-greem2 w-100"  (click)="deleteSelectGroups()"><i class="material-icons pading-top-3">clear</i></button>
       		</div>
 		</div>
 			<div class="row">

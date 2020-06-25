@@ -51,13 +51,14 @@
                   <div class="col-md-6 justify-text-password">
                     <mat-label class="col-md-4">Nueva Contraseña</mat-label>
                     <mat-form-field class="col-md-8 mat-input-custom">
-                      <input matInput>
+                      <input matInput type="password" placeholder="*********"
+                     >
                     </mat-form-field>
                   </div>
                   <div class="col-md-6 justify-text-password">
                     <mat-label class="col-md-5">Confirmar Contraseña</mat-label>
                     <mat-form-field class="col-md-7 mat-input-custom">
-                      <input matInput>
+                      <input matInput type="password" placeholder="*********">
                     </mat-form-field>
                   </div>
                 </div>
@@ -118,6 +119,10 @@
             <div class="clearfix"></div>
             </div>
             <div class="card-footer">
+              <button mat-raised-button type="button" class=" btn-green pull-right" [routerLink]="['/soil-analysis-ios']" >           
+                Humedad en iOS
+              </button>  
+ 
               <button mat-raised-button type="submit" class=" btn-green pull-right" (click)="update()">Actualizar</button>  
             </div>
           </form>

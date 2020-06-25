@@ -48,6 +48,14 @@ export class WiseconnService {
       catchError(this.errorHandl)
     )
   }
+
+  getSensorMeasure(id_zone,type ): Observable<any> {    
+    return this.http.get<any>(this.baseurl + '/measures/filter/sensor?type='+type+'&id_zone='+id_zone)
+    .pipe(
+      retry(1),
+      catchError(this.errorHandl)
+    )
+  }
   activeCloning(id): Observable<any> {
     return this.http.get<any>(this.baseurl + '/farms/'+id+'/activecloning')
     .pipe(

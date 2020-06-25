@@ -50,6 +50,7 @@ export class WeatherMonitoringComponent implements OnInit {
   public dateRangeHistory:any[]=[]
   public selectedValue: any = '1S';
   public requestChartBtn: boolean =true;
+  public  selectedZone;
   //times
   public times =[
   { value: '1D' , active: false},
@@ -170,15 +171,20 @@ export class WeatherMonitoringComponent implements OnInit {
       this.getZones();
     }
   }
-  getZones() {
+ async getZones() {
     this.loading = true;
-    this.wiseconnService.getZones(this.farm.id).subscribe((response: any) => {
+   await this.wiseconnService.getZones(this.farm.id).subscribe((response: any) => {
       this.loading = false; 
       this.zones = response.data?response.data:response;
       this.weatherZones=this.getWeatherZones();
+      this.selectedZone= this.weatherZones[0];     
       this.setLocalStorageItem("lastFarmId",this.farm.id);
       this.setLocalStorageItem("lastZones",this.getJSONStringify(this.zones));
       this.getWeather();
+      console.log('zona seleccionada');
+      
+      console.log(this.selectedZone);
+      
     });
   }
   getWeatherZones(){

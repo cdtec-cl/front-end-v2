@@ -264,12 +264,12 @@ export class FarmMapComponent implements OnInit {
     if (this.farm.latitude && this.farm.longitude) {
       this.climaLoading = false;
       this.weatherService.getWeather("e8078bb2fbfd43f1b9f175027202403", [this.farm.latitude, this.farm.longitude]).subscribe((response) => {
-        this.climaLoading = true;
+        this.climaLoading = true;   
         this.resetWeatherValues(response);
         for (const element of response.data.weather) {
           element.iconLabel = element.hourly[0].weatherIconUrl[0];
           this.climaDay.push(element.date);
-          this.climaIcon.push(element.iconLabel.value);
+          this.climaIcon.push(this.changeHttps(element.iconLabel.value));
           this.climaMax.push(element.maxtempC);
           this.climaMin.push(element.mintempC);
         }
@@ -277,6 +277,14 @@ export class FarmMapComponent implements OnInit {
     }
     this.setUrlValue();
   }
+
+  changeHttps(url){
+    const ht = 'https';
+    return url.replace('http', ht);
+
+
+  }
+
   momentFormat(value:string){
     return moment.utc(value).format("YYYY-MM-DD");
   }

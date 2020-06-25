@@ -26,6 +26,8 @@ export class ChartComponent implements OnInit,OnChanges {
 	@Input() type:string;
 	@Input() firstSensorType:string='';
 	@Input() secondSensorType:string='';
+	@Input() NameY1:string;
+	@Input() NameY2:string;
 	public firstId: number = null;
 	public secondId: number = null;
 	public loading:boolean=false;
@@ -1307,9 +1309,7 @@ export class ChartComponent implements OnInit,OnChanges {
 		subtitle: {
 			text: null
 		},
-		xAxis: {
-			/*type: 'datetime',					
-			tickInterval : 2000000,*/
+		xAxis: {			
 			type: 'datetime', 
 			id:'x0',
 			startOnTick: false,
@@ -1325,54 +1325,36 @@ export class ChartComponent implements OnInit,OnChanges {
 				padding: 0
 			}
 			
-		},
-		/*yAxis: [{ // left y axis
-			title: {
-				text: 'Celsius'
-			},
-			// tickInterval: 5,
-			labels: {
-				format: '{value:.,0f}'
-			},
-			showFirstLabel: false
-		}, { // right y axis
-			title: {
-				text: null
-			},
-			opposite: true,
-			tickInterval: 5,
-			labels: {
-				format: '{value:.,0f}'
-			},
-			showFirstLabel: false
-		}],*/
-		
-		
+		},	
 		yAxis: [{ // Primary yAxis
 			labels: {
 				format: '{value}',
 				style: {
-					color: '#d12b34'
+					color: ''
 				}
+			
 			},
 			title: {
-				text: 'Temperatura',
+				text: '',
 				style: {
-					color: '#d12b34'
+					color: ''
 				}
+			
 			}
 		}, { // Secondary yAxis
 			title: {
-				text: 'Humedad',
+				text: '',
 				style: {
-					color: '#00b9ee'
+					color: ''
 				}
+				
 			},
 			labels: {
 				format: '{value} ',
 				style: {
-					color: '#00b9ee'
+					color: ''
 				}
+			
 			},
 			opposite: true
 		}],
@@ -1410,10 +1392,17 @@ export class ChartComponent implements OnInit,OnChanges {
 
 	ngOnInit(){    
 		this.chartOptions.title.text=this.title;
-		this.chartOptions.chart.type=this.type;
+		this.chartOptions.title.type=this.type;
 		switch (this.title) {
 			case "TEMPERATURA/HUMEDAD":
 				this.chartOptions.colors=['#d12b34','#00b9ee'];
+				this.chartOptions.yAxis[0].title.text='Temperatura';
+				this.chartOptions.yAxis[0].title.style.color='#d12b34';
+				this.chartOptions.yAxis[0].labels.style.color='#666666';
+				this.chartOptions.yAxis[1].title.text='Humedad';		
+				this.chartOptions.yAxis[1].title.style.color='#00b9ee';		;
+				this.chartOptions.yAxis[1].labels.style.color='#666666';
+				this.chartOptions.chart.type=this.type;
 				this.chartOptions.series=[{ 
 					data: [],  
 					name: 'Temperatura',
@@ -1428,18 +1417,32 @@ export class ChartComponent implements OnInit,OnChanges {
 				break;
 			case "PRECIPITACIÓN/ET0":
 				this.chartOptions.colors=['#0069b3','#b5b5b5'];
+				this.chartOptions.yAxis[0].title.text='Precipitación';
+				this.chartOptions.yAxis[0].title.style.color='#0069b3';
+				this.chartOptions.yAxis[0].labels.style.color='#666666';
+				this.chartOptions.yAxis[1].title.text='ET0';
+				this.chartOptions.yAxis[1].title.style.color='#b5b5b5';
+				this.chartOptions.yAxis[1].labels.style.color='#666666';
 				this.chartOptions.series=[{
 					type: undefined,
 					name: 'Precipitación (mm)', 
-					data: [] 
+					data: [],
+					yAxis: 0  
 				},{
 					type: undefined,
 					name: 'Et0 (mm)', 
-					data: [] 
+					data: [],
+					yAxis: 1  
 				}]
 				break;
 			case "PORCIONES FRIOS/PORCIONES FRIOS":
 				this.chartOptions.colors=['#d12b34','#00b9ee'];
+				this.chartOptions.yAxis[0].title.text='PORCIONES FRIOS';
+				this.chartOptions.yAxis[1].title.style.color='#d12b34';
+				this.chartOptions.yAxis[0].labels.style.color='#666666';
+				this.chartOptions.yAxis[1].title.text='';
+				this.chartOptions.yAxis[1].title.style.color='#00b9ee';
+				this.chartOptions.yAxis[1].labels.style.color='#666666';
 				this.chartOptions.series=[{
 					type: undefined,
 					name: 'PORCIONES FRIOS', 
@@ -1450,8 +1453,14 @@ export class ChartComponent implements OnInit,OnChanges {
 					data: [] 
 				}]
 				break;
-			case "RADIACIÓN/VIENTO":
+			case "RADIACIÓN/VELOCIDAD DEL VIENTO":
 				this.chartOptions.colors=['#ffd237','#905ba7'];
+				this.chartOptions.yAxis[0].title.text='Radiacion';
+				this.chartOptions.yAxis[0].title.style.color='#ffd237';
+				this.chartOptions.yAxis[0].labels.style.color='#666666';
+				this.chartOptions.yAxis[1].title.text='Viento';
+				this.chartOptions.yAxis[1].title.style.color='#905ba7';
+				this.chartOptions.yAxis[1].labels.style.color='#666666';
 				this.chartOptions.series=[{
 					type: undefined,
 					name: 'RADIACIÓN', 
@@ -1579,9 +1588,6 @@ export class ChartComponent implements OnInit,OnChanges {
 									
 								}*/
 								this.addData(firstChartData);
-
-								console.log(firstChartData);
-
 								
 								/*this.chartOptions.series[0].data =  this.dataPrueba;
 
