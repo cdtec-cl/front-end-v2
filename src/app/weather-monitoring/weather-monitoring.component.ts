@@ -92,7 +92,9 @@ export class WeatherMonitoringComponent implements OnInit {
           }
         }
         this.setLocalStorageItem("lastRoute","weather-monitoring");
-        if(this.user.id_role==1){
+        
+        if(this.user.id_role===1){
+
           this.getFarms();
         }else{
           this.getFarmsByUser();
@@ -108,8 +110,10 @@ export class WeatherMonitoringComponent implements OnInit {
     this.loading = true;
     this.wiseconnService.getFarms().subscribe((response: any) => {
       this.farms = response.data?response.data:response;
+     
+      
       if(localStorage.getItem("lastFarmId")){
-        this.farm=this.getFarm(parseInt(localStorage.getItem("lastFarmId")));
+        this.farm=this.getFarm(parseInt(localStorage.getItem("lastFarmId")));        
         this.setLocalStorageItem("lastFarmId",this.farm.id);
         if(localStorage.getItem("lastZones")){
           localStorage.removeItem('lastZones');
@@ -120,6 +124,8 @@ export class WeatherMonitoringComponent implements OnInit {
       }
       if(this.farm){
         this.processWeatherStation();
+       
+        
         this.processZones();
       }else if(localStorage.getItem("lastFarmId")!=undefined&&this._route.snapshot.paramMap.get('id')){
         Swal.fire({icon: 'error',title: 'Oops...',text: 'Farm no existente'});
@@ -267,6 +273,11 @@ export class WeatherMonitoringComponent implements OnInit {
       default:
       this.url = "";
     }
+  }
+
+  changeHttps(url){
+    const ht = 'https';
+    return url.replace('http', ht);
   }
   resetWeatherValues(response){
     this.climaDay = [];

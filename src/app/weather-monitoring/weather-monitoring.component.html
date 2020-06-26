@@ -127,7 +127,7 @@
             <div class="card-body card-pronostic">
               <table class="table-title">
                 <thead>
-                  <th> <img src="{{climaToday.weatherIconUrl[0].value}} "> </th>
+                  <th> <img src="{{changeHttps(climaToday.weatherIconUrl[0].value)}} "> </th>
                   <th> {{climaToday.temp_C}}°C </th>
                   <th>
                     <span>
@@ -149,7 +149,7 @@
                   </tr>
                   <tr>
                     <td> </td>
-                    <td *ngFor="let icon of climaIcon"><img style="width: 22px; height:22px" src="{{icon}}"></td>
+                    <td *ngFor="let icon of climaIcon"><img style="width: 22px; height:22px" src="{{changeHttps(icon)}}"></td>
                   </tr>
                   <tr>
                     <td>Máx: </td>

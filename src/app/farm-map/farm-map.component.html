@@ -176,7 +176,7 @@
             <div class="card-body card-pronostic">
               <table class="table-title">
                 <thead>
-                  <th> <img src="{{climaToday!=undefined?climaToday.weatherIconUrl[0].value:'https://pngimage.net/wp-content/uploads/2018/06/imagen-no-disponible-png-4.png'}} "> </th>
+                  <th> <img src="{{climaToday!=undefined?changeHttps(climaToday.weatherIconUrl[0].value):'https://pngimage.net/wp-content/uploads/2018/06/imagen-no-disponible-png-4.png'}} "> </th>
                   <th *ngIf="climaToday!=undefined"> {{climaToday.temp_C}}°C </th>
                   <th *ngIf="climaToday==undefined" style="font-size: 10px;"> Información no disponible </th>
                   <th>

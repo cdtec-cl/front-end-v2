@@ -1424,12 +1424,12 @@ export class ChartComponent implements OnInit,OnChanges {
 				this.chartOptions.yAxis[1].title.style.color='#b5b5b5';
 				this.chartOptions.yAxis[1].labels.style.color='#666666';
 				this.chartOptions.series=[{
-					type: undefined,
+					type: 'column',
 					name: 'Precipitación (mm)', 
 					data: [],
 					yAxis: 0  
 				},{
-					type: undefined,
+					type: 'column',
 					name: 'Et0 (mm)', 
 					data: [],
 					yAxis: 1  

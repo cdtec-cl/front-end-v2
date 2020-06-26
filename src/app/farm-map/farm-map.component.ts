@@ -281,8 +281,6 @@ export class FarmMapComponent implements OnInit {
   changeHttps(url){
     const ht = 'https';
     return url.replace('http', ht);
-
-
   }
 
   momentFormat(value:string){
