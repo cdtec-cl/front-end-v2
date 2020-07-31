@@ -1508,6 +1508,8 @@ export class ChartVersionComponent implements OnInit,OnChanges {
 			this.wiseconnService.getMeasuresOfZones(this.weatherStation.id).subscribe((response) => {
 				this.loading=false;
 				let data=response.data?response.data:response;				
+				console.log('Data Measure');				
+				console.log(data);
 				
 				if(data.length>0){
 					let chartFlag=false;

@@ -1,0 +1,42 @@
+
+<div class="main-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6"> 
+                <div class="form-group">
+                    <label style="font-weight: bold">Cuentas</label>
+                    <div class="input-group">
+                    <ngx-select-dropdown
+                        [(ngModel)]="selectedAccounts"
+                        [ngModelOptions]="{standalone: true}"                        
+                        (change)="selectionChanged($event,'account')"
+                        [config]="accountsConfig"
+                        [options]="accounts"
+                        ngDefaultControl
+                        class="w-100 h-100"
+                        ></ngx-select-dropdown>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6"> 
+                <div class="form-group">
+                    <label style="font-weight: bold">Campos</label>
+                    <div class="input-group">
+                    <ngx-select-dropdown
+                        [(ngModel)]="selectedFarms"
+                        [ngModelOptions]="{standalone: true}"                        
+                        (change)="selectionChanged($event,'farm')"
+                        [config]="farmsConfig"
+                        [options]="farms"
+                        ngDefaultControl
+                        class="w-100 h-100"
+                        ></ngx-select-dropdown>
+                    </div>
+                </div>
+            </div> 
+        </div>        
+        <app-polygon-map [zones]="zones" [showCustomControl]="false"></app-polygon-map>
+        
+    </div>
+</div>
+

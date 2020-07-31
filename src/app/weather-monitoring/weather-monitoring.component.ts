@@ -183,6 +183,8 @@ export class WeatherMonitoringComponent implements OnInit {
       this.loading = false; 
       this.zones = response.data?response.data:response;
       this.weatherZones=this.getWeatherZones();
+     /* console.log('watherzones');
+      console.log(this.weatherZones); */     
       this.selectedZone= this.weatherZones[0];     
       this.setLocalStorageItem("lastFarmId",this.farm.id);
       this.setLocalStorageItem("lastZones",this.getJSONStringify(this.zones));
@@ -204,9 +206,9 @@ export class WeatherMonitoringComponent implements OnInit {
         return element;
       }
     });
-
   }
-  getIrrigarionsRealOfWeatherStation(){
+
+  getIrrigarionsRealOfWeatherStation() {
     this.loading = true;
     this.wiseconnService.getMeterogoAgrifut(this.weatherStation.id).subscribe((response: any) => {
       this.loading = false;
@@ -229,12 +231,33 @@ export class WeatherMonitoringComponent implements OnInit {
     this.loading = true;
     this.wiseconnService.getWeatherStation(this.farm.id).subscribe((response: any) => {
       this.loading = false; 
+     // console.log(response.data);
+      
       this.weatherStation = response.data?response.data:null;
       if(this.weatherStation){
         this.getIrrigarionsRealOfWeatherStation();
         this.setLocalStorageItem("lastFarmId",this.farm.id);
         this.setLocalStorageItem("lastWeatherStation",this.getJSONStringify(this.weatherStation));
         this.getWeather();
+      }else{
+        Swal.fire({icon: 'error',title: 'Oops...',text: 'Campo sin "Estación Metereologica" registrada'});
+      }
+
+    });
+  }
+  
+  getWeatherStationZone(id) {
+    this.loading = true;
+    this.wiseconnService.getWeatherStationZone(id).subscribe((response: any) => {
+      this.loading = false; 
+     /* console.log('luego de la consulta');      
+      console.log(response.data); */     
+      this.weatherStation = response.data?response.data:null;      
+      if(this.weatherStation) {
+         this.getIrrigarionsRealOfWeatherStation();
+         this.setLocalStorageItem("lastFarmId",this.farm.id);
+         this.setLocalStorageItem("lastWeatherStation",this.getJSONStringify(this.weatherStation));
+         this.getWeather();
       }else{
         Swal.fire({icon: 'error',title: 'Oops...',text: 'Campo sin "Estación Metereologica" registrada'});
       }
@@ -301,8 +324,17 @@ export class WeatherMonitoringComponent implements OnInit {
           this.getWeather();
         }
       break;
-      case "zone":        
-        this.router.navigate(['/farmpolygon',this.farm.id, id]);
+      case "zone":  
+        /*console.log('select');      
+        console.log(select);
+        console.log('id');
+        console.log(id);   */   
+        this.getWeatherStationZone(id);
+       // this.processZones();
+       // this.getWeatherStation();
+        this.getWeather();     
+        window.location.reload();
+      //  this.router.navigate(['/farmpolygon',this.farm.id, id]);
       break;
       default:
       break;

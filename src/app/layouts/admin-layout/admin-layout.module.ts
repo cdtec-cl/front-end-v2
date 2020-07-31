@@ -55,6 +55,7 @@ import { PolygonMapComponent } from 'app/components/polygon-map/polygon-map.comp
 import { ChartComponent } from 'app/components/chart/chart.component';
 import { ChartVersionComponent } from 'app/components/chart-version/chart-version.component';
 import { SoilAnalysisIosComponent } from 'app/soil-analysis-ios/soil-analysis-ios.component';
+import { DashboardCampoComponent } from 'app/dashboard-campo/dashboard-campo.component';
 
 @NgModule({
   imports: [
@@ -105,7 +106,8 @@ import { SoilAnalysisIosComponent } from 'app/soil-analysis-ios/soil-analysis-io
     AccountSettingsComponent,
     PolygonMapComponent,
     ChartComponent,
-    ChartVersionComponent
+    ChartVersionComponent,
+    DashboardCampoComponent,
   ],
   entryComponents:[
     DialogMessage

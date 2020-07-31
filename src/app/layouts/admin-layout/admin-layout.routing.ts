@@ -24,9 +24,11 @@ import { AccountSettingsComponent } from '../../account-settings/account-setting
 
 import { SoilAnalysisComponent } from 'app/soil-analysis/soil-analysis.component';
 import { SoilAnalysisIosComponent } from 'app/soil-analysis-ios/soil-analysis-ios.component';
+import { DashboardCampoComponent } from 'app/dashboard-campo/dashboard-campo.component';
 
 export const AdminLayoutRoutes: Routes = [
     { path: 'dashboard',                   component: DashboardComponent },
+    { path: 'dashboard-campo',             component: DashboardCampoComponent },
     { path: 'users',                       component: UsersComponent },
     { path: 'user-form',                   component: UserFormComponent },    
     { path: 'user-form/:id',               component: UserFormComponent },

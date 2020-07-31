@@ -6,6 +6,7 @@ import * as moment from "moment";
 //services
 import { WiseconnService } from 'app/services/wiseconn.service';
 import { Variable } from '@angular/compiler/src/render3/r3_ast';
+import { Router, NavigationEnd } from '@angular/router';
 //graficas
 // tslint:disable-next-line:no-var-requires
 const Highcharts = require('highcharts/highstock');
@@ -36,6 +37,7 @@ export class ChartComponent implements OnInit,OnChanges {
 	@Input() fromDate:any;
 	@Input() toDate:any;
 	public dateRange: any = null;
+	public measureData:any[]=[];
 	public dateRangeHistory:any[]=[];
 	public selectedValue: any = '1S';
 	public requestChartBtn: boolean =true;
@@ -43,6 +45,8 @@ export class ChartComponent implements OnInit,OnChanges {
 	@ViewChild('chart', { static: true }) public chartElement: ElementRef;
 	private chart;
 	public chartData:any[]=[[],[]];
+
+	mySubscription: any;
 	public dataPrueba = [
 		[
 			1528119000000,
@@ -1300,7 +1304,8 @@ export class ChartComponent implements OnInit,OnChanges {
 	};
 	public chartOptions:any = {
 		chart: {
-			zoomType: 'xy'
+			zoomType: 'xy',
+			 height: (9 / 16 * 100) + '%' // 16:9 ratio
 		},
 		colors: [],
 		title: {
@@ -1372,6 +1377,7 @@ export class ChartComponent implements OnInit,OnChanges {
 			crosshairs: true,
 			xDateFormat: '%Y-%m-%d %H:%M:%S'
 		},
+		
 	};
 	//colors
 	/*
@@ -1388,9 +1394,22 @@ export class ChartComponent implements OnInit,OnChanges {
 	constructor(
 		private calendar: NgbCalendar,
 		private wiseconnService: WiseconnService, 
-		) { }
+		private router: Router,
+		) { 			
+			
 
-	ngOnInit(){    
+		this.router.routeReuseStrategy.shouldReuseRoute = function () {
+			return false;
+		};
+		this.mySubscription = this.router.events.subscribe((event) => {
+			if (event instanceof NavigationEnd) {
+			// Trick the Router into believing it's last link wasn't previously loaded
+			this.router.navigated = false;
+			}
+		});
+		}
+
+	ngOnInit() {    
 		this.chartOptions.title.text=this.title;
 		this.chartOptions.title.type=this.type;
 		switch (this.title) {
@@ -1464,11 +1483,13 @@ export class ChartComponent implements OnInit,OnChanges {
 				this.chartOptions.series=[{
 					type: undefined,
 					name: 'RADIACIÓN', 
-					data: [] 
+					data: [], 
+					yAxis: 0   
 				},{
 					type: undefined,
 					name: 'VIENTO', 
-					data: [] 
+					data: [],
+					yAxis: 1   
 				}]
 				break;
 			default:
@@ -1476,6 +1497,10 @@ export class ChartComponent implements OnInit,OnChanges {
 			break;
 		}
 		this.highchartsShow();
+		
+		
+	//	console.log(this.weatherStation);
+		
 	}
 	ngOnChanges(changes: SimpleChanges) {
 	/*	if(changes.weatherStation!=undefined){
@@ -1491,6 +1516,10 @@ export class ChartComponent implements OnInit,OnChanges {
 		if(this.weatherStation&&this.fromDate&&this.toDate){
 			this.getChartInformation(false);			
 		}
+
+		this.highchartsShow();
+
+		
 	}
 	highchartsShow(){
 		this.chartOptions.chart['renderTo'] = this.chartElement.nativeElement;
@@ -1534,7 +1563,7 @@ export class ChartComponent implements OnInit,OnChanges {
 		}      
 	}
 
-	addData(data){
+	addData(data) {	
 		this.chartData[0]= data[0];
 		this.chartData[1]= data[1];
 		this.renderCharts(); 
@@ -1554,39 +1583,69 @@ export class ChartComponent implements OnInit,OnChanges {
 					selectedValue:this.selectedValue
 				});
 			}
-			this.loading=true;		
-			 
+			this.loading=true;		 
 			
 			this.wiseconnService.getMeasuresOfZones(this.weatherStation.id).subscribe((response) => {
-				this.loading=false;
+				this.loading=false;			
+			/*	console.log(this.weatherStation);
+				console.log(response);			
+				console.log(this.firstSensorType);		
+				console.log(this.secondSensorType);	*/	
+				
 				
 				let data=response.data?response.data:response;
 				if(data.length>0){
 					let chartFlag=false;
 					let j=0;
 					let htmlErrors=null;
+					this.firstId = null;
+					this.secondId = null; 
+					this.measureData =[];
 					while (!chartFlag && j < data.length - 1) {
+						/*console.log('----------------------------------------------------');						
+						console.log(data[j].sensorType);
+						console.log(data[j].name);
+						console.log(this.firstSensorType);
+						console.log(this.secondSensorType);						
+						console.log('----------------------------------------------------');*/
+						
 						if (data[j].sensorType === this.firstSensorType||data[j].name==this.firstSensorType) {
+							/*console.log('first');							
+							console.log(data[j].id);							*/
 							this.firstId = data[j].id;
 						}
 						if (data[j].sensorType === this.secondSensorType||data[j].name==this.secondSensorType) {
+							/*console.log('second');		
+							console.log(data[j].id);*/
 							this.secondId = data[j].id;
+						
 						}
+					//	console.log('paso'+this.firstId+this.secondId);
+						
 						let data2 = 'id0=' + this.firstId + '&' + 'id1=' + this.secondId;
 						
 						
+						//console.log(this.measureData.length);
+						
 
-						if(this.firstId&&this.secondId){
+						if(this.firstId&&this.secondId) {
+						//	console.log('se valido');
+							
 							chartFlag=true;
 							this.loading = true;
 							this.wiseconnService.getDataByMeasure(this.firstId,this.dateRange, data2).subscribe((response) => {
 								let firstChartData = response.data ? response.data : response;
+								this.measureData =   response.data ? response.data : response;
+								/*console.log(this.measureData);
+								console.log(this.measureData.length);*/
+								
 								/*for (var i = 0; i < firstChartData.length ; i++) {
 									/*console.log(firstChartData[i][0]);
 									console.log(firstChartData[i][1]);
 									dataarray.push([firstChartData[i][0], firstChartData[i][1]]);
 									
-								}*/
+								}*/								
+								
 								this.addData(firstChartData);
 								
 								/*this.chartOptions.series[0].data =  this.dataPrueba;
@@ -1676,5 +1735,14 @@ export class ChartComponent implements OnInit,OnChanges {
 		//return new Date( parseInt(fecha, 10) *1000);
 		// return (new Date((fecha - (25567 + 1))*86400*1000)).toLocaleDateString();
 	}
+
+	
+	ngOnDestroy() {
+		if (this.mySubscription) {
+		this.mySubscription.unsubscribe();
+		}
+	}
+
+	
 
 }

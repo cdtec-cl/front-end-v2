@@ -45,7 +45,16 @@ export class SoilAnalysisComponent implements OnInit {
     });
   }
   processUrlText(text:string){
-    return text.replace(" ", "%20")
+    let texto = text.split(" ");
+    let name="";
+    for (let index = 0; index < texto.length; index++) {
+       if(index==0)
+        name = texto[index]; 
+      else
+        name = name+"%20"+texto[index]; 
+
+    }   
+   return name
   }
   getAccountSettingByFarm(){
     this.loading = true;
@@ -55,8 +64,11 @@ export class SoilAnalysisComponent implements OnInit {
       let username=this.processUrlText(this.accountSetting.name);
       let password=this.processUrlText(this.accountSetting.password);
       let accountName=this.processUrlText(this.farm.name);
-      let idUser=this.processUrlText(this.accountSetting.id_user);
+      let idUser=this.processUrlText(this.accountSetting.id_user);      
       this.url = "https://cdtec.irrimaxlive.com/?cmd=signin&username="+username+"&password="+password+"#/u:"+idUser+"/Campos:l/"+accountName+":f";
+      console.log(this.url);
+      
+
     });
   }
 

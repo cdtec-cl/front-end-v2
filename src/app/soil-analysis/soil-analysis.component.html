@@ -1,4 +1,6 @@
 <div style="margin-top:60px;">
-	<iframe *ngIf="url" [src]="url | safePipe" frameborder="0" allowFullScreen="true" class="w-100" style="height:80vh"></iframe>
+	<iframe *ngIf="url" [src]="url | safePipe" frameborder="0" allowFullScreen="true" class="w-100" style="height:100vh" target="_self"></iframe>	
+
 	<ngx-loading [show]="loading" [config]="{ backdropBorderRadius: '3px' }"></ngx-loading>
 </div>
+

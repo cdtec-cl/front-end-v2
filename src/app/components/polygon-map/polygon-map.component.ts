@@ -101,7 +101,7 @@ export class PolygonMapComponent implements OnInit,OnChanges {
 	      content: contentString
 	    });
 	    var wisservice = this.wiseconnService;
-      if(localStorage.getItem('lastPolygonData')&&localStorage.getItem('lastMapData')){
+     /* if(localStorage.getItem('lastPolygonData')&&localStorage.getItem('lastMapData')){
         let lastMapData=null; let lastPolygonData=null;
         if(localStorage.getItem("lastMapData")){
           lastMapData=JSON.parse(localStorage.getItem("lastMapData"));
@@ -112,6 +112,10 @@ export class PolygonMapComponent implements OnInit,OnChanges {
         var map = new window['google'].maps.Map(this.mapElement.nativeElement,lastMapData);
         for (let polygon of lastPolygonData) {
           let marker=null;
+          console.log('elemento2');
+          
+          console.log(polygon);
+          
           var Triangle = new window['google'].maps.Polygon(polygon.data);
           if(polygon.markerImg){
             marker=this.addMarkerImage(map, polygon.element, polygon.markerImg);
@@ -126,8 +130,8 @@ export class PolygonMapComponent implements OnInit,OnChanges {
         if(this.showCustomControl){
           this.addCustomControl(map,this.mapElement);
         }
-        this.intPercentage='100%';
-      }else{
+        this.intPercentage='100%';*/
+     // }else{
         let polygonDatas=[];
         this.loading=true;
         let i=0;
@@ -141,7 +145,14 @@ export class PolygonMapComponent implements OnInit,OnChanges {
           //prueba con wiseconn
           //wisservice.getIrrigarionsRealOfZones(element.id_wiseconn,this.dateRange).subscribe((response: any) => {
           //prueba local
+          console.log('Prueba elemento');
+          
+          console.log(element);
+          
           wisservice.getIrrigarionsRealOfZones(element.id,this.dateRange).subscribe((response: any) => {
+            console.log('data response');
+            console.log(response);
+            
             let data=response.data?response.data:response;
             let id= element.id_wiseconn?element.id_wiseconn:element.id;
               if (data.length>0) {
@@ -227,7 +238,7 @@ export class PolygonMapComponent implements OnInit,OnChanges {
             this.loading=false;
           });
         }
-      }
+      
     
   }
 
